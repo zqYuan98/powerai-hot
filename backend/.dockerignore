@@ -1,0 +1,12 @@
+# 密钥与本地数据绝不进镜像（Docker 不读 .gitignore）
+.env
+.env.*
+*.db
+*.db-wal
+*.db-shm
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+tests/

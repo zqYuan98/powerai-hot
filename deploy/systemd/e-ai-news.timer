@@ -1,0 +1,10 @@
+[Unit]
+Description=Run E-AI news ingest every 2 hours
+
+[Timer]
+OnCalendar=*-*-* 00/2:00:00 Asia/Shanghai
+Persistent=true
+Unit=e-ai-job@news.service
+
+[Install]
+WantedBy=timers.target

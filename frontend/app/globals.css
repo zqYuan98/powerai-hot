@@ -1,0 +1,114 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+body {
+  overflow-x: auto;
+  font-family: "Noto Sans SC", sans-serif;
+  color: #e6ebf4;
+  background: #0a0c12;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes pAIglow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes pToast {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* 站内全文富文本（详情页 .pai-rich 作用域） */
+.pai-rich {
+  font-size: 15px;
+  line-height: 1.85;
+  color: #c4cddd;
+  word-break: break-word;
+}
+.pai-rich p {
+  margin: 0 0 14px;
+}
+.pai-rich h1,
+.pai-rich h2,
+.pai-rich h3,
+.pai-rich h4 {
+  color: #f2f5fa;
+  line-height: 1.4;
+  margin: 24px 0 12px;
+}
+.pai-rich img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  margin: 10px 0;
+}
+.pai-rich a {
+  color: #9fd0ff;
+}
+.pai-rich blockquote {
+  margin: 14px 0;
+  padding: 10px 16px;
+  border-left: 3px solid rgba(52, 224, 216, 0.5);
+  background: rgba(148, 163, 184, 0.06);
+  border-radius: 0 8px 8px 0;
+}
+.pai-rich pre {
+  overflow-x: auto;
+  background: rgba(148, 163, 184, 0.08);
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.pai-rich code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.92em;
+}
+.pai-rich table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 14px 0;
+}
+.pai-rich th,
+.pai-rich td {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 6px 10px;
+  font-size: 13.5px;
+}
+.pai-rich ul,
+.pai-rich ol {
+  padding-left: 22px;
+  margin: 0 0 14px;
+}

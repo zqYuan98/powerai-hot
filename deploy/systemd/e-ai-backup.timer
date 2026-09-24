@@ -1,0 +1,10 @@
+[Unit]
+Description=Run E-AI backup retention at 03:30 Asia/Shanghai
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 Asia/Shanghai
+Persistent=true
+Unit=e-ai-backup.service
+
+[Install]
+WantedBy=timers.target

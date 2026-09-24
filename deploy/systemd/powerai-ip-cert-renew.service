@@ -1,0 +1,15 @@
+[Unit]
+Description=Renew short-lived Let's Encrypt IP certificate for PowerAI Hot
+After=network-online.target caddy.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/certbot-ip/venv/bin/certbot renew --non-interactive --no-random-sleep-on-renew --config-dir /etc/letsencrypt-ip --work-dir /var/lib/letsencrypt-ip --logs-dir /var/log/letsencrypt-ip --deploy-hook /usr/local/sbin/powerai-ip-cert-deploy
+Nice=10
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/etc/letsencrypt-ip /var/lib/letsencrypt-ip /var/log/letsencrypt-ip /etc/caddy/certs/powerai-ip /run/systemd
+
+[Install]
+WantedBy=multi-user.target

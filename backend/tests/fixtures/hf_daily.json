@@ -1,0 +1,20 @@
+[
+  {
+    "paper": {
+      "id": "2507.02001",
+      "title": "UniOCR: One Model for All Text Recognition Tasks",
+      "summary": "We present UniOCR, a unified model...",
+      "authors": [{"name": "D. Chen"}, {"name": "E. Liu"}]
+    },
+    "publishedAt": "2026-07-02T00:00:00.000Z"
+  },
+  {
+    "paper": {
+      "id": "2507.02002",
+      "title": "Grid-VLM: Vision-Language Models for Power Infrastructure",
+      "summary": "A domain-adapted VLM...",
+      "authors": [{"name": "F. Zhou"}]
+    },
+    "publishedAt": "2026-07-02T00:00:00.000Z"
+  }
+]

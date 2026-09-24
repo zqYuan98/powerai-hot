@@ -1,0 +1,10 @@
+[Unit]
+Description=Run E-AI papers ingest at 06:10 Asia/Shanghai
+
+[Timer]
+OnCalendar=*-*-* 06:10:00 Asia/Shanghai
+Persistent=true
+Unit=e-ai-job@papers.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,12 @@
+[Unit]
+Description=E-AI PostgreSQL backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/e-ai/current/powerai-hot
+Environment=BACKEND_ENV_FILE=/opt/e-ai/secrets/backend.env
+Environment=POSTGRES_PASSWORD_FILE=/opt/e-ai/secrets/postgres_password.txt
+ExecStart=/usr/bin/flock -n /opt/e-ai/releases/.operations.lock /opt/e-ai/current/powerai-hot/scripts/backup.sh
+TimeoutStartSec=1800

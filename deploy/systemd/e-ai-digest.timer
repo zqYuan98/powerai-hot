@@ -1,0 +1,10 @@
+[Unit]
+Description=Run E-AI digest at 08:00 Asia/Shanghai
+
+[Timer]
+OnCalendar=*-*-* 08:00:00 Asia/Shanghai
+Persistent=true
+Unit=e-ai-job@digest.service
+
+[Install]
+WantedBy=timers.target

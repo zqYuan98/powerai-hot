@@ -1,0 +1,47 @@
+{
+    default_sni 124.220.207.16
+}
+
+http://124.220.207.16 {
+    handle /.well-known/acme-challenge/* {
+        root * /var/www/letsencrypt
+        file_server
+    }
+
+    handle {
+        encode zstd gzip
+        reverse_proxy 127.0.0.1:8080 {
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+        }
+    }
+}
+
+https://124.220.207.16 {
+    tls /etc/caddy/certs/powerai-ip/fullchain.pem /etc/caddy/certs/powerai-ip/privkey.pem
+    encode zstd gzip
+
+    header {
+        Strict-Transport-Security "max-age=31536000"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "same-origin"
+        -Server
+    }
+
+    reverse_proxy 127.0.0.1:8080 {
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-Host {host}
+    }
+
+    log {
+        output file /var/log/caddy/powerai-hot-access.log {
+            roll_size 20mb
+            roll_keep 5
+            roll_keep_for 168h
+        }
+        format json
+    }
+}

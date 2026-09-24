@@ -1,0 +1,10 @@
+[Unit]
+Description=E-AI production job %i
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/e-ai/current/powerai-hot
+ExecStart=/usr/bin/flock -n /opt/e-ai/releases/.operations.lock /opt/e-ai/current/powerai-hot/scripts/run-job.sh %i
+TimeoutStartSec=1800

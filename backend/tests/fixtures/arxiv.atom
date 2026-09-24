@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:arxiv="http://arxiv.org/schemas/atom">
+  <title>ArXiv Query Results</title>
+  <entry>
+    <id>http://arxiv.org/abs/2507.01234v1</id>
+    <title>DocMamba: Efficient Document Understanding
+ with State Space Models</title>
+    <summary>We propose DocMamba, a state-space model for OCR-free document understanding...</summary>
+    <published>2026-07-02T12:00:00Z</published>
+    <author><name>Alice Zhang</name></author>
+    <author><name>Bob Li</name></author>
+    <link href="http://arxiv.org/abs/2507.01234v1" rel="alternate" type="text/html"/>
+    <link href="http://arxiv.org/pdf/2507.01234v1" rel="related" type="application/pdf" title="pdf"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2507.05678v1</id>
+    <title>Defect Detection in Power Grid Inspection via Vision-Language Models</title>
+    <summary>A VLM-based approach for transmission line defect detection...</summary>
+    <published>2026-07-01T09:30:00Z</published>
+    <author><name>Carol Wang</name></author>
+    <link href="http://arxiv.org/abs/2507.05678v1" rel="alternate" type="text/html"/>
+    <link href="http://arxiv.org/pdf/2507.05678v1" rel="related" type="application/pdf" title="pdf"/>
+  </entry>
+</feed>

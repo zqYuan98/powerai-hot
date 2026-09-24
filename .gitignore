@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.db
+*.sqlite3
+
+# Node / Next
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+npm-debug.log*
+playwright-report/
+test-results/
+.playwright-cli/
+
+# Env
+.env
+backend/.env
+backend/.compose-test.env
+*.local
+.codex-logs/
+.superpowers/
+.e2e/
+
+# Local backups / hotfix artifacts
+.hotfix-base/
+.hotfix-*.tgz
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
