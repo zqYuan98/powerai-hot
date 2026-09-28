@@ -9,12 +9,15 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import and_, select, text, update
+from sqlalchemy import select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Job
 from app.models.enums import JobStatus
+
+# 与迁移中 ux_jobs_active_dedupe 的 WHERE 条件保持一致
+ACTIVE_DEDUPE_PREDICATE = text("dedupe_key IS NOT NULL AND status IN ('queued', 'running')")
 
 
 async def enqueue(
@@ -37,10 +40,9 @@ async def enqueue(
         run_after=datetime.now(UTC) + (delay or timedelta()),
     )
     if dedupe_key is not None:
-        stmt = stmt.on_conflict_do_nothing(
-            index_elements=[Job.dedupe_key],
-            index_where=and_(Job.dedupe_key.is_not(None), Job.status.in_(("queued", "running"))),
-        )
+        # 谓词必须是字面量：写成绑定参数时 PostgreSQL 无法据此推断部分唯一索引
+        # （通用执行计划下报「no unique or exclusion constraint matching」）
+        stmt = stmt.on_conflict_do_nothing(index_elements=[Job.dedupe_key], index_where=ACTIVE_DEDUPE_PREDICATE)
     return (await session.execute(stmt.returning(Job.id))).scalar_one_or_none()
 
 

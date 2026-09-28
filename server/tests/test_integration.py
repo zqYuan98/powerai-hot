@@ -232,6 +232,14 @@ async def test_queue_dedupe_and_concurrent_claim(session):
     assert len(got) == len(set(got)) == 6
 
 
+async def test_queue_dedupe_survives_generic_plan(session):
+    """PostgreSQL 在同一连接执行 5 次后可能改用通用执行计划；去重插入必须始终可用。"""
+    for n in range(12):
+        await queue.enqueue(session, "collect", {"n": n}, dedupe_key=f"collect:k{n % 3}")
+        await session.commit()
+    assert await session.scalar(select(func.count()).select_from(Job)) == 3
+
+
 async def test_queue_retry_then_fail_and_recover(session):
     await queue.enqueue(session, "x", max_attempts=2)
     await session.commit()
