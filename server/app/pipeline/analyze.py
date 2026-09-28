@@ -1,7 +1,7 @@
 """LLM① 批量初筛 + LLM② 逐条精读，以及把精读结果写回条目。"""
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from app.collectors.textutil import CN_TZ
 from app.config import settings
@@ -117,5 +117,8 @@ def apply_analysis(item: Item, out: AnalyzeOutput, tuning: Tuning) -> Lead | Non
     lead.biz_line = raw.get("biz_line") or "other"
     lead.match_score = int(raw.get("match_score") or 0)
     lead.dropped_fields = grounded.dropped
+    if lead.deadline_at is not None and lead.deadline_at < datetime.now(UTC) - timedelta(days=1):
+        item.selected = False  # 已过截止时间：保留在商机看板，但不占精选
+        item.status_reason = "已过截止时间"
     return lead
 

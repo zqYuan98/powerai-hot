@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
@@ -117,6 +117,10 @@ class LeadOut(BaseModel):
     def _deadline(cls, v: Any) -> datetime | None:
         if not v:
             return None
+        text = str(v).strip()
+        if text.endswith("24:00"):  # 「12月20日24时」= 次日零点
+            base = LeadOut._deadline(text[:-5].strip())
+            return base + timedelta(days=1) if base else None
         for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d"):
             try:
                 return datetime.strptime(str(v).strip(), fmt).replace(tzinfo=CN_TZ)

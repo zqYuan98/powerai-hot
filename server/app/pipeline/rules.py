@@ -4,6 +4,9 @@
 """
 from __future__ import annotations
 
+import re
+from datetime import UTC, datetime
+
 from app.models.enums import Channel
 
 POWER_KW = ("电力", "电网", "供电", "变电", "输电", "配电", "输变电", "特高压", "千伏", "kV", "KV",
@@ -36,6 +39,19 @@ def hard_noise(title: str) -> str | None:
     if hit in ("食堂", "食材", "物业服务", "保洁", "法律顾问", "印刷", "办公用品", "绿化养护"):
         return f"非电力类采购：{hit}"
     return None if has_power_signal(title) else f"噪音词：{hit}"
+
+
+_YEAR = re.compile(r"(20\d{2})\s*年")
+
+
+def stale_title(title: str, now: datetime | None = None) -> str | None:
+    """标题里出现的年份全都早于去年（如「2023年12月第2批采购」）→ 旧公告，返回原因。
+    列表页常混入置顶的历史公告，且不一定带日期，这一步零成本拦截。"""
+    years = [int(y) for y in _YEAR.findall(title)]
+    this_year = (now or datetime.now(UTC)).year
+    if years and max(years) < this_year - 1:
+        return f"旧公告：标题年份 {max(years)}"
+    return None
 
 
 def rule_channel(title: str) -> Channel | None:

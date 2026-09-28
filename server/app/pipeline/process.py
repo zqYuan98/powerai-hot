@@ -20,7 +20,7 @@ from app.models import Item
 from app.models.enums import Channel, ItemStatus
 from app.pipeline.analyze import analyze_item, apply_analysis, screen_batch
 from app.pipeline.notify import notify_item
-from app.pipeline.rules import hard_noise, rule_channel
+from app.pipeline.rules import hard_noise, rule_channel, stale_title
 from app.pipeline.stories import assign_story
 from app.pipeline.tuning import Tuning, load_tuning
 
@@ -74,7 +74,7 @@ async def _screen(items: list[Item], tuning: Tuning, stats: ProcessStats) -> lis
     survivors: list[Item] = []
     to_screen: list[Item] = []
     for item in items:
-        if reason := hard_noise(item.title):
+        if reason := hard_noise(item.title) or stale_title(item.title):
             item.status, item.status_reason = ItemStatus.SCREENED_OUT.value, reason
             stats.screened_out += 1
         elif _trusted(item):

@@ -13,7 +13,7 @@ from app.models.enums import Channel
 from app.pipeline.grounding import ground_lead
 from app.pipeline.llm_schemas import AnalyzeOutput
 from app.pipeline.notify import rule_matches, worth_pushing
-from app.pipeline.rules import hard_noise, rule_channel
+from app.pipeline.rules import hard_noise, rule_channel, stale_title
 from app.pipeline.scoring import Dims, compute_score, is_selected
 from app.pipeline.stories import bigrams, heat_of, jaccard, normalize_key
 from app.pipeline.tuning import DimWeights, Tuning
@@ -34,6 +34,19 @@ from app.pipeline.tuning import DimWeights, Tuning
 )
 def test_rule_channel(title, channel):
     assert rule_channel(title) == channel
+
+
+def test_stale_title_blocks_old_announcements():
+    now = datetime(2026, 9, 28, tzinfo=UTC)
+    assert stale_title("超高压输电公司广州局海口分局2023年12月第2批服务类零星采购公告", now)
+    assert stale_title("某省2025年第三批配网物资招标", now) is None      # 去年的仍放行
+    assert stale_title("2026年输电线路无人机巡检服务招标", now) is None
+    assert stale_title("没有年份的标题", now) is None
+
+
+def test_deadline_2400_means_next_day():
+    lead = AnalyzeOutput.model_validate({"lead": {"deadline": "2026-12-20 24:00"}}).lead
+    assert lead is not None and lead.deadline == datetime(2026, 12, 21, 0, 0, tzinfo=CN_TZ)
 
 
 def test_hard_noise_blocks_non_power_procurement_even_with_power_words():
