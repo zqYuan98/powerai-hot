@@ -75,9 +75,10 @@ services:
     restart: unless-stopped
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    # 对外端口；与本机其他服务冲突时在 .env 里改，如 HTTP_BIND=127.0.0.1:18090
     ports:
-      - "80:80"
-      - "443:443"
+      - "${HTTP_BIND:-80}:80"
+      - "${HTTPS_BIND:-443}:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
