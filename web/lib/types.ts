@@ -1,0 +1,27 @@
+import type { components } from "./api-types";
+
+type S = components["schemas"];
+export type ItemCard = S["ItemCard"];
+export type ItemDetail = S["ItemDetail"];
+export type LeadOut = S["LeadOut"];
+export type LeadRow = S["LeadRow"];
+export type LeadPage = S["LeadPage"];
+export type HotStory = S["HotStory"];
+export type StoryDetail = S["StoryDetail"];
+export type DigestBrief = S["DigestBrief"];
+export type DigestDetail = S["DigestDetail"];
+export type Meta = S["Meta"];
+export type SourceOut = S["SourceOut"];
+export type SourceRunOut = S["SourceRunOut"];
+export type WatchRuleOut = S["WatchRuleOut"];
+export type WatchRuleIn = S["WatchRuleIn"];
+export type Tuning = S["Tuning"];
+export type UsageOut = S["UsageOut"];
+export type JobOut = S["JobOut"];
+export type PipelineStats = S["PipelineStats"];
+export type Ok = S["Ok"];
+export type Channel = S["Channel"];
+export type Stage = S["Stage"];
+export type BizLine = S["BizLine"];
+export type FollowStatus = S["FollowStatus"];
+export type Page<T> = { items: T[]; next_cursor?: string | null };

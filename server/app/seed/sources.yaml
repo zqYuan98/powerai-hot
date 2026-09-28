@@ -1,0 +1,137 @@
+# 信源注册表。key 是全系统唯一标识；启动/部署时 upsert 到 sources 表。
+# 已存在的信源只更新 name/url/kind/config/tier/category，不覆盖设置页里改过的 enabled/interval_min。
+#
+# tier: T1 官方一手（政府/电网/招标平台） | T1_5 专业行业媒体 | T2 综合媒体
+# category: 默认频道（tender/award/project/planning/policy/market/company/tech/industry）
+# html_list 的 link_pattern 对绝对 URL 做 fullmatch，命名分组 y/m/d 提取日期。
+# 站点实测记录见 docs/SOURCES.md。
+
+- key: bjx-tender
+  name: 北极星电力网·招标
+  kind: html_list
+  url: https://shupeidian.bjx.com.cn/zb/
+  tier: T1_5
+  category: tender
+  interval_min: 60
+  notes: 原 zhaobiao.bjx.com.cn 于 2026-07 下线（SSL 握手失败/502），改由各子站 /zb/ 栏目承接。详情页 JS 反爬，只有标题。
+  config:
+    lists:
+      - {url: "https://shupeidian.bjx.com.cn/zb/", channel: tender}
+      - {url: "https://chuneng.bjx.com.cn/zb/", channel: tender}
+      - {url: "https://fd.bjx.com.cn/zb/", channel: tender}
+    link_pattern: 'https?://news\.bjx\.com\.cn/html/(?P<y>\d{4})(?P<m>\d{2})(?P<d>\d{2})/\d+\.shtml'
+    limit_per_list: 25
+
+- key: bjx-news
+  name: 北极星电力网
+  kind: html_list
+  url: https://www.bjx.com.cn/
+  tier: T1_5
+  category: industry
+  interval_min: 120
+  notes: 输配电/储能/售电子站首页 + 政策栏目 + 主站。
+  config:
+    lists:
+      - {url: "https://shupeidian.bjx.com.cn/zc/", channel: policy}
+      - {url: "https://chuneng.bjx.com.cn/zc/", channel: policy}
+      - {url: "https://shoudian.bjx.com.cn/zc/", channel: market}
+      - {url: "https://shupeidian.bjx.com.cn/"}
+      - {url: "https://www.bjx.com.cn/"}
+    link_pattern: 'https?://news\.bjx\.com\.cn/html/(?P<y>\d{4})(?P<m>\d{2})(?P<d>\d{2})/\d+\.shtml'
+    limit_per_list: 25
+
+- key: nea
+  name: 国家能源局
+  kind: html_list
+  url: https://www.nea.gov.cn/
+  tier: T1
+  category: policy
+  interval_min: 120
+  notes: /policy/index.htm 已 404，目前只抓首页（约 20 条）。
+  config:
+    lists:
+      - {url: "https://www.nea.gov.cn/"}
+    link_pattern: 'https://www\.nea\.gov\.cn/(?P<y>\d{4})(?P<m>\d{2})(?P<d>\d{2})/[0-9a-fA-F]+/c\.html'
+    https_upgrade: true
+
+- key: sgcc-nc
+  name: 国家电网·华北分部
+  kind: html_list
+  url: http://www.nc.sgcc.com.cn/
+  tier: T1
+  category: company
+  interval_min: 360
+  notes: 国网主站 JS 风控返回 412，用华北分部承接；量小，党建/人事稿偏多。
+  config:
+    lists:
+      - {url: "http://www.nc.sgcc.com.cn/zxzx/gsxw/"}
+      - {url: "http://www.nc.sgcc.com.cn/zxzx/zbdt/"}
+    link_pattern: 'http://www\.nc\.sgcc\.com\.cn/zxzx/(?:gsxw|zbdt)/(?P<y>\d{4})/(?P<m>\d{2})/\d+\.shtml'
+    date_from_parent: true
+
+- key: csg
+  name: 南方电网
+  kind: html_list
+  url: https://www.csg.cn/
+  tier: T1
+  category: company
+  interval_min: 120
+  config:
+    lists:
+      - {url: "https://www.csg.cn/"}
+    link_pattern: 'https://www\.csg\.cn/(?:xwzx/.+|index/jdxw)/(?:\d{6}/)?t(?P<y>\d{4})(?P<m>\d{2})(?P<d>\d{2})_\d+\.html'
+
+- key: ccgp
+  name: 中国政府采购网
+  kind: html_list
+  url: https://www.ccgp.gov.cn/
+  tier: T1
+  category: tender
+  interval_min: 60
+  notes: 中央/地方公开招标；标题须命中电力、运检、安监类关键词。2026-09 起 HTTPS 入口被 WAF 返回 403，改走 HTTP。
+  config:
+    lists:
+      - {url: "http://www.ccgp.gov.cn/cggg/zygg/gkzb/", channel: tender}
+      - {url: "http://www.ccgp.gov.cn/cggg/dfgg/gkzb/", channel: tender}
+    link_pattern: 'https?://www\.ccgp\.gov\.cn/cggg/(?:zygg|dfgg)/gkzb/\d{6}/t(?P<y>\d{4})(?P<m>\d{2})(?P<d>\d{2})_\d+\.htm'
+    min_title_len: 10
+    limit_per_list: 40
+    title_keywords: [电力, 电网, 供电, 输电, 变电, 配电, 输变电, 线路, 电缆, 特高压, 储能, 光伏, 风电, 充电,
+                     巡检, 无人机, 视频监控, 安防, 布控, 在线监测, 智能监测, 智慧工地, 安全帽, 人工智能, 视觉识别, 机器人]
+
+- key: csg-bidding
+  name: 南方电网供应链
+  kind: html_list
+  url: https://www.bidding.csg.cn/
+  tier: T1
+  category: tender
+  interval_min: 60
+  config:
+    lists:
+      - {url: "https://www.bidding.csg.cn/zbcg/index.jhtml", channel: tender}
+    link_pattern: 'https://www\.bidding\.csg\.cn/(?:zbgg|fzbgg|lxcggg|zbhxrgs|zbcg|yjzjgg|xygg)/\d+\.jhtml'
+    min_title_len: 14
+    skip_title_prefixes: ["["]
+    date_from_parent: true
+    limit_per_list: 40
+
+# —— 技术频道（默认关闭，按需在设置页启用）——
+- key: jiazi-wechat
+  name: 甲子光年（公众号）
+  kind: rss
+  url: https://decemberpei.cyou/rssbox/wechat-jiaziguangnian.xml
+  tier: T2
+  category: tech
+  enabled: false
+  interval_min: 360
+  notes: 科技产业深度报道，含 AI 落地分析。第三方公众号 RSS 桥，存在失效风险。
+
+- key: nvidia-blog
+  name: NVIDIA Blog
+  kind: rss
+  url: https://blogs.nvidia.com/feed/
+  tier: T1
+  category: tech
+  enabled: false
+  interval_min: 720
+  notes: 边缘推理/视觉 AI 硬件动态。

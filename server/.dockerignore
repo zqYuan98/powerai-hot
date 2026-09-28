@@ -1,0 +1,7 @@
+.venv
+.env
+backups
+.mypy_cache
+.ruff_cache
+.pytest_cache
+**/__pycache__

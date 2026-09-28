@@ -1,37 +1,32 @@
 # Python
 __pycache__/
 *.py[cod]
-.pytest_cache/
 .venv/
-venv/
-*.db
-*.sqlite3
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Node / Next
 node_modules/
 .next/
-out/
 *.tsbuildinfo
-npm-debug.log*
-playwright-report/
 test-results/
-.playwright-cli/
+playwright-report/
+next-env.d.ts
 
-# Env
+# 本地配置与数据（密钥只放 .env，不入库）
 .env
-backend/.env
-backend/.compose-test.env
-*.local
-.codex-logs/
-.superpowers/
-.e2e/
-
-# Local backups / hotfix artifacts
-.hotfix-base/
-.hotfix-*.tgz
+.env.*.local
+server/backups/
+deploy/.env
+deploy/backups/
 
 # OS / editor
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
+
+# 本地密钥文件
+*apikey*.txt
+*.key
