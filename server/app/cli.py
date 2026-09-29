@@ -7,6 +7,7 @@ python -m app.cli digest daily [YYYY-MM-DD] # 生成日报（weekly 传周一日
 python -m app.cli heat                      # 重算热度
 python -m app.cli backup                    # 立即备份数据库（pg_dump）
 python -m app.cli reindex                   # 补算向量并重建事件归并（首次配置 Embedding 后执行）
+python -m app.cli eval [--rerun] [--split holdout|all] [--label 说明]  # 按人工标注评测精选
 """
 from __future__ import annotations
 
@@ -24,6 +25,7 @@ from app.logs import setup_logging
 from app.models import Item, Source
 from app.models.enums import DigestKind, ItemStatus
 from app.pipeline.collect import collect_source
+from app.pipeline.evaluate import format_report, run_eval
 from app.pipeline.process import MAX_ATTEMPTS, process_items
 from app.pipeline.reindex import backfill_embeddings, rebuild_stories
 from app.pipeline.stories import recompute_heat
@@ -84,6 +86,11 @@ async def run(args: argparse.Namespace) -> None:
                 print(f"补算向量 {await backfill_embeddings(session)} 条")
                 total, multi = await rebuild_stories(session)
                 print(f"重建事件 {total} 个，其中多来源 {multi} 个")
+        elif args.cmd == "eval":
+            async with SessionLocal() as session:
+                run = await run_eval(session, mode="rerun" if args.rerun else "stored", split=args.split,
+                                     label=args.label)
+                print(format_report(run))
         elif args.cmd == "backup":
             async with SessionLocal() as session:
                 print(await backup_job(session, client, {}))
@@ -105,6 +112,10 @@ def main() -> None:
     sub.add_parser("heat")
     sub.add_parser("backup")
     sub.add_parser("reindex")
+    ev = sub.add_parser("eval")
+    ev.add_argument("--rerun", action="store_true", help="用当前提示词和参数重跑（会调模型）；默认用库里已有判断")
+    ev.add_argument("--split", choices=["development", "holdout", "all"], default="development")
+    ev.add_argument("--label", default=None, help="这次评测的说明，如「第一版评分标准」")
     setup_logging()
     asyncio.run(run(parser.parse_args()))
 

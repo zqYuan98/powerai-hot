@@ -18,9 +18,10 @@ from app.collectors.http import PoliteClient
 from app.config import settings
 from app.digest.builder import build_digest
 from app.llm.client import LlmError, complete_json, load_prompt
-from app.models import Item, Source, Story
+from app.models import GoldLabel, Item, Source, Story
 from app.models.enums import DigestKind, ItemStatus
 from app.pipeline.collect import collect_source, due_sources
+from app.pipeline.evaluate import run_eval
 from app.pipeline.llm_schemas import StoryDigestOutput
 from app.pipeline.notify import remind_deadlines
 from app.pipeline.process import MAX_ATTEMPTS, process_items
@@ -148,15 +149,22 @@ async def deadline_job(session: AsyncSession, client: PoliteClient, payload: dic
 async def maintenance(session: AsyncSession, client: PoliteClient, payload: dict[str, Any]) -> dict[str, Any]:
     recovered = await queue.recover_stale(session)
     await queue.purge_finished(session)
-    # 被初筛淘汰超过 60 天的条目只留标题，释放正文空间
+    # 被初筛淘汰超过 60 天的条目只留标题，释放正文空间（有人工标注的留着，评测重跑要用）
     await session.execute(
         update(Item).where(Item.status == ItemStatus.SCREENED_OUT,
                            Item.first_seen_at < datetime.now(UTC) - timedelta(days=60),
-                           Item.content_text.is_not(None))
+                           Item.content_text.is_not(None), ~Item.id.in_(select(GoldLabel.item_id)))
         .values(content_text=None, content_html=None)
     )
     await session.commit()
     return {"recovered_jobs": recovered}
+
+
+@handler("eval")
+async def eval_job(session: AsyncSession, client: PoliteClient, payload: dict[str, Any]) -> dict[str, Any]:
+    run = await run_eval(session, mode=payload.get("mode", "stored"), split=payload.get("split", "development"),
+                         label=payload.get("label"))
+    return {"run_id": run.id, "status": run.status, "error": run.error}
 
 
 @handler("backup")

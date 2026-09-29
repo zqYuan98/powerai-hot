@@ -14,6 +14,8 @@ const TASK_LABEL: Record<string, string> = {
   digest_daily: "日报",
   digest_weekly: "周报",
   embed: "向量",
+  "eval:screen": "评测·初筛",
+  "eval:analyze": "评测·精读",
 };
 
 export default async function UsagePage() {

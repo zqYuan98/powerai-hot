@@ -19,6 +19,7 @@ const KIND_LABEL: Record<string, string> = {
   deadline_reminders: "截止提醒",
   maintenance: "维护",
   backup: "备份",
+  eval: "精选评测",
 };
 const STATUS_TONE: Record<string, string> = {
   queued: "text-muted",

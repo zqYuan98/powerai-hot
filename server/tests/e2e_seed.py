@@ -21,8 +21,8 @@ from app.models import Item, Lead, Story
 from app.models.enums import DigestKind
 from app.seed.loader import seed_watch_rules, sync_sources
 
-TABLES = ("notifications", "leads", "items", "stories", "source_runs", "sources", "watch_rules",
-          "digests", "jobs", "llm_calls", "app_settings")
+TABLES = ("gold_labels", "eval_runs", "notifications", "leads", "items", "stories", "source_runs", "sources",
+          "watch_rules", "digests", "jobs", "llm_calls", "app_settings")
 
 SAMPLES = [
     # (source_key, title, title_zh, channel, province, score, dims, summary, reason, action, lead)

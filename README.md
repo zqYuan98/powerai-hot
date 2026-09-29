@@ -36,6 +36,7 @@ bash deploy.sh
 
 ## 文档
 
+- [系统问答：整体逻辑与每一步为什么这样设计](docs/FAQ.md)
 - [架构与关键设计决定](docs/ARCHITECTURE.md)
 - [信源登记、新增方法与实测记录](docs/SOURCES.md)
 - [运维手册](docs/RUNBOOK.md)

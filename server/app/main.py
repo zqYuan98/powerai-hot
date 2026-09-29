@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, Respons
 from sqlalchemy import text
 
 from app import auth
-from app.api import digests, items, leads, stories
+from app.api import digests, gold, items, leads, stories
 from app.api import settings as settings_api
 from app.config import settings
 from app.db import SessionLocal, engine
@@ -89,7 +89,7 @@ async def me(request: Request) -> Ok:
 
 
 protected = APIRouter(prefix="/api", dependencies=[Depends(auth.require_user)])
-for module in (items, leads, stories, digests, settings_api):
+for module in (items, leads, stories, digests, gold, settings_api):
     protected.include_router(module.router)
 
 app.include_router(public)

@@ -80,3 +80,4 @@ web/
 | jobs | 持久任务队列 |
 | llm_calls | 每次模型调用的真实 token、费用、耗时、错误 |
 | app_settings | 业务画像与打分参数 |
+| gold_labels / eval_runs | 精选校准：人工标注「该选/不该选」与每次评测的指标、门槛扫描、逐条结果 |

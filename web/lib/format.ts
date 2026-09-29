@@ -53,6 +53,14 @@ export const FOLLOW_LABEL: Record<FollowStatus, string> = {
 
 export const TIER_LABEL: Record<string, string> = { T1: "一手", T1_5: "行业", T2: "媒体" };
 
+export const EVAL_MODE_LABEL: Record<string, string> = { stored: "线上判断", rerun: "重跑" };
+export const EVAL_SPLIT_LABEL: Record<string, string> = { development: "开发集", holdout: "留出集", all: "全部" };
+
+/** 0–1 的比例显示为百分比；缺值（分母为 0）显示短横。 */
+export function formatRatio(v: unknown): string {
+  return typeof v === "number" ? `${Math.round(v * 100)}%` : "–";
+}
+
 const TZ = "Asia/Shanghai";
 const dayKeyFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
 const timeFmt = new Intl.DateTimeFormat("zh-CN", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });

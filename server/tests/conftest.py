@@ -76,8 +76,8 @@ def migrated() -> None:
     command.upgrade(cfg, "head")
 
 
-TABLES = ("notifications", "leads", "items", "stories", "source_runs", "sources", "watch_rules",
-          "digests", "jobs", "llm_calls", "app_settings")
+TABLES = ("gold_labels", "eval_runs", "notifications", "leads", "items", "stories", "source_runs", "sources",
+          "watch_rules", "digests", "jobs", "llm_calls", "app_settings")
 
 
 @pytest.fixture

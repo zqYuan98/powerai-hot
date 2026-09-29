@@ -71,7 +71,8 @@ async def _fill_fulltext(client: PoliteClient, items: list[Item], stats: Process
             stats.fulltext += 1
 
 
-async def _screen(items: list[Item], tuning: Tuning, stats: ProcessStats) -> list[Item]:
+async def screen_items(items: list[Item], tuning: Tuning, stats: ProcessStats) -> list[Item]:
+    """规则拦截 → 可信信源直通 → 模型批量初筛。只改条目属性，不碰数据库（评测也复用它）。"""
     survivors: list[Item] = []
     to_screen: list[Item] = []
     for item in items:
@@ -128,7 +129,7 @@ async def process_items(session: AsyncSession, client: PoliteClient, item_ids: l
         return stats
 
     await _fill_fulltext(client, items, stats)
-    survivors = await _screen(items, tuning, stats)
+    survivors = await screen_items(items, tuning, stats)
     await session.commit()
 
     outputs = await asyncio.gather(*(analyze_item(i, tuning.profile) for i in survivors), return_exceptions=True)

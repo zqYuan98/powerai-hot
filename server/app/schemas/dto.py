@@ -279,3 +279,69 @@ class LoginIn(BaseModel):
 class Ok(Out):
     ok: bool = True
     detail: str | None = None
+
+
+# ---------- 精选校准 ----------
+
+GoldDecision = Literal["select", "reject", "either"]
+
+
+class GoldCase(Out):
+    """待标注条目：只给原文，不给分数、AI 摘要和精选结论，避免标注被系统判断带偏。"""
+
+    item_id: int
+    title: str
+    url: str
+    source_name: str
+    tier: str
+    published_at: datetime | None
+    first_seen_at: datetime
+    body: str | None
+    decision: GoldDecision | None = None
+    note: str | None = None
+
+
+class GoldLabelIn(BaseModel):
+    decision: GoldDecision
+    note: str | None = Field(default=None, max_length=500)
+
+
+class GoldRecent(Out):
+    item_id: int
+    title: str
+    decision: GoldDecision
+    labeled_at: datetime
+
+
+class GoldStats(Out):
+    total: int
+    target: int
+    decision: dict[str, int]
+    stratum: dict[str, int]
+    split: dict[str, int]
+    recent: list[GoldRecent]
+
+
+class EvalRunIn(BaseModel):
+    mode: Literal["stored", "rerun"] = "stored"
+    split: Literal["development", "holdout", "all"] = "development"
+    label: str | None = Field(default=None, max_length=100)
+
+
+class EvalRunBrief(ORM):
+    id: int
+    label: str
+    mode: str
+    split: str
+    status: str
+    error: str | None
+    metrics: dict[str, Any]
+    cost_yuan: float
+    created_at: datetime
+    finished_at: datetime | None
+
+
+class EvalRunDetail(EvalRunBrief):
+    params: dict[str, Any]
+    sweep: list[dict[str, Any]]
+    errors: list[dict[str, Any]]

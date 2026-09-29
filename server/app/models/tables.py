@@ -295,6 +295,39 @@ class LlmCall(Base):
     created_at: Mapped[datetime] = mapped_column(TS, server_default=NOW)
 
 
+class GoldLabel(Base):
+    """人工标注的「该选/不该选」，用于校准精选（见 pipeline/evaluate.py）。有标注的条目不会被清理正文。"""
+
+    __tablename__ = "gold_labels"
+
+    item_id: Mapped[int] = mapped_column(ForeignKey("items.id", ondelete="CASCADE"), primary_key=True)
+    decision: Mapped[str] = mapped_column(String(8))    # select | reject | either
+    split: Mapped[str] = mapped_column(String(12))      # development | holdout
+    stratum: Mapped[str] = mapped_column(String(12))    # 抽样时所在的层：selected | near | low | screened
+    note: Mapped[str | None] = mapped_column(Text)
+    labeled_at: Mapped[datetime] = mapped_column(TS, server_default=NOW, onupdate=NOW)
+
+
+class EvalRun(Base):
+    """一次精选评测：当时的配置、总体指标、门槛扫描与逐条结果。"""
+
+    __tablename__ = "eval_runs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    label: Mapped[str] = mapped_column(String(100))
+    mode: Mapped[str] = mapped_column(String(8))        # stored 用库里已有判断 | rerun 用当前提示词重跑
+    split: Mapped[str] = mapped_column(String(12))      # development | holdout | all
+    status: Mapped[str] = mapped_column(String(8), default="running")  # running | done | failed
+    error: Mapped[str | None] = mapped_column(Text)
+    params: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    metrics: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    sweep: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    cases: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    cost_yuan: Mapped[float] = mapped_column(Float, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(TS, server_default=NOW)
+    finished_at: Mapped[datetime | None] = mapped_column(TS)
+
+
 class AppSetting(Base):
     __tablename__ = "app_settings"
 

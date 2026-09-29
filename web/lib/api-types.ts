@@ -77,7 +77,8 @@ export interface paths {
         };
         /**
          * Search
-         * @description 关键词（pg_trgm 加速）+ 语义（pgvector）混合检索，关键词命中优先。
+         * @description 召回：关键词（pg_trgm 加速）+ 语义（pgvector）；排序：bge-reranker 重排。
+         *     未配置 Embedding 时退化为关键词命中、按时间倒序。
          */
         get: operations["search_api_items_search_get"];
         put?: never;
@@ -253,6 +254,94 @@ export interface paths {
         put?: never;
         /** Generate */
         post: operations["generate_api_digests__kind__generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gold/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gold Stats */
+        get: operations["gold_stats_api_gold_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gold/next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gold Next */
+        get: operations["gold_next_api_gold_next_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gold/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gold Case */
+        get: operations["gold_case_api_gold__item_id__get"];
+        /** Put Label */
+        put: operations["put_label_api_gold__item_id__put"];
+        post?: never;
+        /** Delete Label */
+        delete: operations["delete_label_api_gold__item_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/eval-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Runs */
+        get: operations["list_runs_api_eval_runs_get"];
+        put?: never;
+        /** Start Run */
+        post: operations["start_run_api_eval_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/eval-runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Run */
+        get: operations["get_run_api_eval_runs__run_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -619,11 +708,173 @@ export interface components {
             /** Impact */
             impact: number | null;
         };
+        /** EvalRunBrief */
+        EvalRunBrief: {
+            /** Id */
+            id: number;
+            /** Label */
+            label: string;
+            /** Mode */
+            mode: string;
+            /** Split */
+            split: string;
+            /** Status */
+            status: string;
+            /** Error */
+            error: string | null;
+            /** Metrics */
+            metrics: {
+                [key: string]: unknown;
+            };
+            /** Cost Yuan */
+            cost_yuan: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Finished At */
+            finished_at: string | null;
+        };
+        /** EvalRunDetail */
+        EvalRunDetail: {
+            /** Id */
+            id: number;
+            /** Label */
+            label: string;
+            /** Mode */
+            mode: string;
+            /** Split */
+            split: string;
+            /** Status */
+            status: string;
+            /** Error */
+            error: string | null;
+            /** Metrics */
+            metrics: {
+                [key: string]: unknown;
+            };
+            /** Cost Yuan */
+            cost_yuan: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Finished At */
+            finished_at: string | null;
+            /** Params */
+            params: {
+                [key: string]: unknown;
+            };
+            /** Sweep */
+            sweep: {
+                [key: string]: unknown;
+            }[];
+            /** Errors */
+            errors: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** EvalRunIn */
+        EvalRunIn: {
+            /**
+             * Mode
+             * @default stored
+             * @enum {string}
+             */
+            mode: "stored" | "rerun";
+            /**
+             * Split
+             * @default development
+             * @enum {string}
+             */
+            split: "development" | "holdout" | "all";
+            /** Label */
+            label?: string | null;
+        };
         /**
          * FollowStatus
          * @enum {string}
          */
         FollowStatus: "new" | "watching" | "following" | "ignored" | "closed";
+        /**
+         * GoldCase
+         * @description 待标注条目：只给原文，不给分数、AI 摘要和精选结论，避免标注被系统判断带偏。
+         */
+        GoldCase: {
+            /** Item Id */
+            item_id: number;
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
+            /** Source Name */
+            source_name: string;
+            /** Tier */
+            tier: string;
+            /** Published At */
+            published_at: string | null;
+            /**
+             * First Seen At
+             * Format: date-time
+             */
+            first_seen_at: string;
+            /** Body */
+            body: string | null;
+            /** Decision */
+            decision: ("select" | "reject" | "either") | null;
+            /** Note */
+            note: string | null;
+        };
+        /** GoldLabelIn */
+        GoldLabelIn: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "select" | "reject" | "either";
+            /** Note */
+            note?: string | null;
+        };
+        /** GoldRecent */
+        GoldRecent: {
+            /** Item Id */
+            item_id: number;
+            /** Title */
+            title: string;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "select" | "reject" | "either";
+            /**
+             * Labeled At
+             * Format: date-time
+             */
+            labeled_at: string;
+        };
+        /** GoldStats */
+        GoldStats: {
+            /** Total */
+            total: number;
+            /** Target */
+            target: number;
+            /** Decision */
+            decision: {
+                [key: string]: number;
+            };
+            /** Stratum */
+            stratum: {
+                [key: string]: number;
+            };
+            /** Split */
+            split: {
+                [key: string]: number;
+            };
+            /** Recent */
+            recent: components["schemas"]["GoldRecent"][];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1674,6 +1925,249 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    gold_stats_api_gold_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoldStats"];
+                };
+            };
+        };
+    };
+    gold_next_api_gold_next_get: {
+        parameters: {
+            query?: {
+                skip?: number[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoldCase"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    gold_case_api_gold__item_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoldCase"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_label_api_gold__item_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoldLabelIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoldStats"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_label_api_gold__item_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoldStats"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_runs_api_eval_runs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRunBrief"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_run_api_eval_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalRunIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_run_api_eval_runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRunDetail"];
                 };
             };
             /** @description Validation Error */

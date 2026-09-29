@@ -13,6 +13,7 @@ import logging
 import re
 import time
 from collections.abc import Awaitable, Callable, Sequence
+from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -49,6 +50,8 @@ class CallRecord:
 
 
 Recorder = Callable[[CallRecord], Awaitable[None]]
+# 记账时给任务名加前缀（如评测记为 eval:analyze），让用量页把这部分花费单独列出来
+call_tag: ContextVar[str | None] = ContextVar("call_tag", default=None)
 Reasoning = Literal["off", "low", "high"]
 
 
@@ -140,6 +143,8 @@ async def complete_json[T: BaseModel](
         else:
             extra["reasoning_effort"] = reasoning
             max_tokens += 4000
+    if tag := call_tag.get():
+        task = f"{tag}:{task}"
     last: LlmError | None = None
     for attempt in range(attempts):
         started = time.monotonic()
