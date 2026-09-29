@@ -6,8 +6,14 @@ cd "$(dirname "$0")"
 [ -f .env ] || { echo "缺少 deploy/.env，请先 cp .env.example .env 并填写"; exit 1; }
 dc() { docker compose --env-file .env -f compose.yml "$@"; }
 
-echo "==> 构建镜像"
-dc build
+# 小内存服务器可在别处构建后 docker load 导入镜像，再用 SKIP_BUILD=1 bash deploy.sh 跳过构建
+if [ "${SKIP_BUILD:-0}" = "1" ]; then
+  echo "==> 跳过构建，使用已导入的镜像"
+  docker image inspect powerai-server:latest powerai-web:latest >/dev/null
+else
+  echo "==> 构建镜像"
+  dc build
+fi
 
 echo "==> 启动数据库"
 dc up -d --wait db
