@@ -31,6 +31,7 @@ docker compose exec api python -m app.cli collect nea   # 立即采集某信源�
 docker compose exec api python -m app.cli process       # 处理所有待处理/可重试条目
 docker compose exec api python -m app.cli digest daily  # 立即生成今天的日报
 docker compose exec api python -m app.cli backup        # 立即备份
+docker compose exec api python -m app.cli reindex       # 补算向量并重建事件归并（首次配置 Embedding 后）
 docker compose exec db psql -U powerai                  # 数据库
 ```
 

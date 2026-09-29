@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     embedding_base_url: str = "https://api.siliconflow.cn/v1"
     embedding_api_key: str = ""
     embedding_model: str = "BAAI/bge-m3"
+    rerank_model: str = "BAAI/bge-reranker-v2-m3"  # 搜索结果重排，与 Embedding 共用端点和 Key；留空关闭
 
     # --- 推送 ---
     feishu_webhook_url: str = ""

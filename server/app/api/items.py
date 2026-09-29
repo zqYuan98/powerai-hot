@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.common import card_query, decode_cursor, encode_cursor, fetch_cards, to_card
 from app.db import get_session
-from app.llm.client import LlmError, embed
+from app.llm.client import LlmError, embed, rerank
 from app.models import Item, Story
 from app.models.enums import Channel, ItemStatus
 from app.schemas.dto import Dims, ItemCard, ItemDetail, ItemPatch, Page, StoryBrief
@@ -18,6 +18,8 @@ from app.schemas.dto import Dims, ItemCard, ItemDetail, ItemPatch, Page, StoryBr
 router = APIRouter(prefix="/items", tags=["items"])
 Session = Annotated[AsyncSession, Depends(get_session)]
 TITLE_EXPR = func.coalesce(Item.title_zh, "") + literal(" ") + Item.title  # 与 trgm 索引表达式一致
+RECALL = 40        # 每路召回条数
+MIN_RERANK = 0.05  # 语义召回结果的最低重排分
 
 
 @router.get("", response_model=Page[ItemCard])
@@ -64,12 +66,13 @@ async def list_items(
 @router.get("/search", response_model=list[ItemCard])
 async def search(session: Session, q: Annotated[str, Query(min_length=1, max_length=100)],
                  limit: Annotated[int, Query(ge=1, le=50)] = 30) -> list[ItemCard]:
-    """关键词（pg_trgm 加速）+ 语义（pgvector）混合检索，关键词命中优先。"""
+    """召回：关键词（pg_trgm 加速）+ 语义（pgvector）；排序：bge-reranker 重排。
+    未配置 Embedding 时退化为关键词命中、按时间倒序。"""
     base = card_query().where(Item.status == ItemStatus.ANALYZED)
     pattern = f"%{q.strip()}%"
     keyword = await fetch_cards(session, base.where(
         or_(TITLE_EXPR.ilike(pattern), Item.summary.ilike(pattern))
-    ).order_by(Item.first_seen_at.desc()).limit(limit))
+    ).order_by(Item.first_seen_at.desc()).limit(RECALL))
     seen = {c.id for c in keyword}
     semantic: list[ItemCard] = []
     try:
@@ -78,9 +81,18 @@ async def search(session: Session, q: Annotated[str, Query(min_length=1, max_len
         vectors = None
     if vectors:
         distance = Item.embedding.cosine_distance(vectors[0])
-        semantic = await fetch_cards(session, base.where(Item.embedding.is_not(None), distance < 0.5)
-                                     .order_by(distance).limit(limit))
-    return (keyword + [c for c in semantic if c.id not in seen])[:limit]
+        semantic = await fetch_cards(session, base.where(Item.embedding.is_not(None), distance < 0.55)
+                                     .order_by(distance).limit(RECALL))
+    candidates = keyword + [c for c in semantic if c.id not in seen]
+    try:
+        scores = await rerank(q, [f"{c.title_zh or c.title}。{c.summary or ''}" for c in candidates])
+    except LlmError:
+        scores = None
+    if scores is not None:
+        ranked = sorted(zip(candidates, scores, strict=True), key=lambda p: -p[1])
+        # 关键词直接命中的始终保留；纯语义召回的低相关结果丢弃
+        candidates = [c for c, s in ranked if c.id in seen or s >= MIN_RERANK]
+    return candidates[:limit]
 
 
 @router.get("/{item_id}", response_model=ItemDetail)

@@ -6,6 +6,7 @@ python -m app.cli process                   # 处理所有待处理/可重试条
 python -m app.cli digest daily [YYYY-MM-DD] # 生成日报（weekly 传周一日期）
 python -m app.cli heat                      # 重算热度
 python -m app.cli backup                    # 立即备份数据库（pg_dump）
+python -m app.cli reindex                   # 补算向量并重建事件归并（首次配置 Embedding 后执行）
 """
 from __future__ import annotations
 
@@ -24,6 +25,7 @@ from app.models import Item, Source
 from app.models.enums import DigestKind, ItemStatus
 from app.pipeline.collect import collect_source
 from app.pipeline.process import MAX_ATTEMPTS, process_items
+from app.pipeline.reindex import backfill_embeddings, rebuild_stories
 from app.pipeline.stories import recompute_heat
 from app.seed.loader import seed_watch_rules, sync_sources
 from app.worker.jobs import backup_job
@@ -77,6 +79,11 @@ async def run(args: argparse.Namespace) -> None:
         elif args.cmd == "heat":
             async with SessionLocal() as session:
                 print(f"更新 {await recompute_heat(session)} 个事件")
+        elif args.cmd == "reindex":
+            async with SessionLocal() as session:
+                print(f"补算向量 {await backfill_embeddings(session)} 条")
+                total, multi = await rebuild_stories(session)
+                print(f"重建事件 {total} 个，其中多来源 {multi} 个")
         elif args.cmd == "backup":
             async with SessionLocal() as session:
                 print(await backup_job(session, client, {}))
@@ -97,6 +104,7 @@ def main() -> None:
     d.add_argument("date", nargs="?")
     sub.add_parser("heat")
     sub.add_parser("backup")
+    sub.add_parser("reindex")
     setup_logging()
     asyncio.run(run(parser.parse_args()))
 

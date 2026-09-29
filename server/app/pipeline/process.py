@@ -20,6 +20,7 @@ from app.models import Item
 from app.models.enums import Channel, ItemStatus
 from app.pipeline.analyze import analyze_item, apply_analysis, screen_batch
 from app.pipeline.notify import notify_item
+from app.pipeline.reindex import embedding_text
 from app.pipeline.rules import hard_noise, rule_channel, stale_title
 from app.pipeline.stories import assign_story
 from app.pipeline.tuning import Tuning, load_tuning
@@ -103,7 +104,7 @@ async def _screen(items: list[Item], tuning: Tuning, stats: ProcessStats) -> lis
 
 
 async def _embed(items: list[Item]) -> None:
-    texts = [f"{i.title_zh or i.title}\n{i.summary or ''}" for i in items]
+    texts = [embedding_text(i) for i in items]
     try:
         vectors = await embed(texts)
     except LlmError as exc:

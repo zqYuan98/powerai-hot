@@ -18,6 +18,7 @@ from functools import cache
 from pathlib import Path
 from typing import Any, Literal
 
+import httpx
 import openai
 from openai.types.chat import ChatCompletionMessageParam
 from pydantic import BaseModel, ValidationError
@@ -189,6 +190,34 @@ def _embed_client() -> openai.AsyncOpenAI:
         timeout=30,
         max_retries=2,
     )
+
+
+async def rerank(query: str, documents: Sequence[str]) -> list[float] | None:
+    """返回与 documents 一一对应的相关度（0–1）；未配置时返回 None。"""
+    if not (settings.embedding_enabled and settings.rerank_model) or not documents:
+        return None
+    started = time.monotonic()
+    try:
+        async with httpx.AsyncClient(timeout=20) as http:
+            resp = await http.post(
+                f"{settings.embedding_base_url.rstrip('/')}/rerank",
+                headers={"Authorization": f"Bearer {settings.embedding_api_key}"},
+                json={"model": settings.rerank_model, "query": query,
+                      "documents": [d[:1000] for d in documents], "top_n": len(documents)},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        await recorder(CallRecord("rerank", settings.rerank_model, 0, 0, 0.0,
+                                  int((time.monotonic() - started) * 1000), ok=False, error=str(exc)[:300]))
+        raise LlmError(f"rerank 失败：{exc}"[:300], retryable=True) from exc
+    scores = [0.0] * len(documents)
+    for row in data.get("results") or []:
+        scores[row["index"]] = float(row["relevance_score"])
+    tokens = int((data.get("meta") or {}).get("tokens", {}).get("input_tokens", 0) or 0)
+    await recorder(CallRecord("rerank", settings.rerank_model, tokens, 0, 0.0,
+                              int((time.monotonic() - started) * 1000), ok=True))
+    return scores
 
 
 async def embed(texts: Sequence[str]) -> list[list[float]] | None:
