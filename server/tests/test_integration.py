@@ -267,14 +267,6 @@ async def test_queue_retry_then_fail_and_recover(session):
 
 # ---------- API ----------
 
-@pytest.fixture
-async def api():
-    from app.main import app
-
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
-        yield client
-
-
 async def test_api_feed_detail_leads_and_digest(session, fake_llm, api):
     source = await seed_ccgp(session)
     with respx.mock(assert_all_called=False) as mock:
@@ -327,16 +319,19 @@ async def test_api_feed_detail_leads_and_digest(session, fake_llm, api):
     assert await session.scalar(select(func.count()).select_from(Digest)) == 1
 
 
-async def test_auth_required_when_password_set(session, api, monkeypatch):
+async def test_admin_login_when_password_set(session, api, monkeypatch):
     monkeypatch.setattr(settings, "app_password", "correct horse battery")
-    assert (await api.get("/api/items")).status_code == 401
+    assert (await api.get("/api/items")).status_code == 200  # 前台匿名可读
+    assert (await api.get("/api/sources")).status_code == 401
     assert (await api.post("/api/auth/login", json={"password": "wrong"})).status_code == 401
     r = await api.post("/api/auth/login", json={"password": "correct horse battery"})
     assert r.status_code == 200 and "pa_session" in r.cookies
-    assert (await api.get("/api/items")).status_code == 200
+    assert (await api.get("/api/sources")).status_code == 200
+    assert (await api.get("/api/auth/me")).json() == {"admin": True, "auth_required": True}
     tampered = r.cookies["pa_session"][:-2] + "xx"
     api.cookies.set("pa_session", tampered)
-    assert (await api.get("/api/items")).status_code == 401
+    assert (await api.get("/api/sources")).status_code == 401
+    assert (await api.get("/api/auth/me")).json()["admin"] is False
 
 
 def test_daily_window_is_beijing_morning():

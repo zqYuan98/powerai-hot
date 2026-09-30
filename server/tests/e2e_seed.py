@@ -17,11 +17,11 @@ from sqlalchemy import text
 from app.config import settings
 from app.db import SessionLocal, engine
 from app.digest.builder import build_digest
-from app.models import Item, Lead, Story
+from app.models import Article, Item, Lead, Story
 from app.models.enums import DigestKind
 from app.seed.loader import seed_watch_rules, sync_sources
 
-TABLES = ("gold_labels", "eval_runs", "notifications", "leads", "items", "stories", "source_runs", "sources",
+TABLES = ("articles", "feedback", "gold_labels", "eval_runs", "notifications", "leads", "items", "stories", "source_runs", "sources",
           "watch_rules", "digests", "jobs", "llm_calls", "app_settings")
 
 SAMPLES = [
@@ -69,6 +69,27 @@ def _hash(s: str) -> str:
     return hashlib.sha256(s.encode()).hexdigest()
 
 
+ARTICLES = [
+    # (account, title, title_zh, domain, ktype, score, dims, summary, points, scenarios, solution_use, standards)
+    ("示例·送变电", "干货！GIS 安装的 8 个关键控制点，建议收藏", "示例：GIS 安装的 8 个质量控制点", "substation",
+     "construction", 80.5, (8, 9, 8, 6), "按工序梳理 GIS 从基础复测到气体试验的关键控制点与验收指标。",
+     ["基础预埋件水平误差不大于 2mm，安装前复测", "对接前清洁法兰面，环境湿度不超过 80%，搭设防尘棚",
+      "SF6 气体含水量交接试验值小于 150μL/L", "抽真空保持时间与真空度按厂家文件执行并记录"],
+     "变电站 GIS 安装施工、监理旁站与验收", "施工组织设计的质量控制章节、监理细则",
+     ["GB 50147-2010", "GB 50150-2016"]),
+    ("示例·电力方案库", "输电线路无人机自主巡检系统建设方案（附架构图）", "示例：输电线路无人机自主巡检系统的建设方案思路",
+     "inspection", "design", 76.0, (8, 8, 7, 7), "从机巢布点、航线规划到缺陷识别闭环，给出一套可复用的建设方案框架。",
+     ["机巢按 15–20km 巡检半径布点，优先覆盖重要交叉跨越", "航线由激光点云自动生成，杆塔精细化巡检 8–12 个拍摄点",
+      "缺陷识别模型输出进入工单系统，形成发现—派单—消缺闭环"],
+     "地市供电公司输电运检智能化改造", "智能运检类投标技术方案的总体架构与实施路径", []),
+    ("示例·电力图书馆", "接地电阻为什么总测不合格？五种降阻方法对比", "示例：接地网降阻的五种做法与适用条件", "civil",
+     "principle", 68.0, (7, 7, 7, 6), "对比深井接地、外引接地、降阻剂等五种降阻方式的原理、成本与适用地质。",
+     ["高土壤电阻率地区优先深井接地，井深以穿透高阻层为准", "降阻剂需选用长效型，注意对接地体的腐蚀性",
+      "外引接地距离受限于接地体有效长度"],
+     "山区、岩石地区变电站与杆塔接地施工", "", ["GB/T 50065-2011"]),
+]
+
+
 async def main() -> None:
     assert "e2e" in settings.database_url, "只允许对名字含 e2e 的测试库执行"
     now = datetime.now(UTC)
@@ -100,6 +121,15 @@ async def main() -> None:
                 days = lead.pop("days")
                 session.add(Lead(item_id=item.id, province=prov,
                                  deadline_at=now + timedelta(days=days) if days else None, **lead))
+        for n, (account, title, title_zh, domain, ktype, score, dims, summary, points, scen, use, stds) in \
+                enumerate(ARTICLES):
+            session.add(Article(
+                url=f"https://example.com/knowledge/{n}", url_hash=_hash(f"knowledge{n}"), account=account,
+                title=title, title_zh=title_zh, status="analyzed", domain=domain, ktype=ktype, score=score,
+                d_depth=dims[0], d_practical=dims[1], d_accuracy=dims[2], d_original=dims[3], summary=summary,
+                key_points=points, scenarios=scen, solution_use=use or None, standards=stds, tags=["示例"],
+                content_text="\n".join(points), published_at=now - timedelta(days=n + 2), analyzed_at=now,
+            ))
         await session.commit()
         await build_digest(session, DigestKind.DAILY, (now + timedelta(days=1)).astimezone(settings.tz).date())
     await engine.dispose()

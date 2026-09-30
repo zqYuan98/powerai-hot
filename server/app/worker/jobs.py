@@ -18,12 +18,13 @@ from app.collectors.http import PoliteClient
 from app.config import settings
 from app.digest.builder import build_digest
 from app.llm.client import LlmError, complete_json, load_prompt
-from app.models import GoldLabel, Item, Source, Story
-from app.models.enums import DigestKind, ItemStatus
+from app.models import Article, Feedback, GoldLabel, Item, Source, Story
+from app.models.enums import ArticleStatus, DigestKind, ItemStatus
+from app.pipeline import knowledge
 from app.pipeline.collect import collect_source, due_sources
 from app.pipeline.evaluate import run_eval
 from app.pipeline.llm_schemas import StoryDigestOutput
-from app.pipeline.notify import remind_deadlines
+from app.pipeline.notify import format_feedback, remind_deadlines, send_feishu
 from app.pipeline.process import MAX_ATTEMPTS, process_items
 from app.pipeline.stories import recompute_heat
 from app.pipeline.tuning import load_tuning
@@ -40,6 +41,13 @@ def handler(kind: str) -> Callable[[Handler], Handler]:
         HANDLERS[kind] = fn
         return fn
     return deco
+
+
+async def enqueue_articles(session: AsyncSession, article_ids: list[int], *, priority: int = 1) -> int:
+    for aid in article_ids:
+        await queue.enqueue(session, "article_process", {"article_id": aid}, priority=priority,
+                            dedupe_key=f"article:{aid}")
+    return len(article_ids)
 
 
 async def enqueue_process(session: AsyncSession, item_ids: list[int], *, priority: int = 0) -> int:
@@ -60,7 +68,10 @@ async def collect_job(session: AsyncSession, client: PoliteClient, payload: dict
     if not source.enabled and not payload.get("force"):
         return {"skipped": "信源已停用"}
     outcome = await collect_source(session, client, source)
-    batches = await enqueue_process(session, outcome.new_ids, priority=1)
+    if outcome.knowledge:
+        batches = await enqueue_articles(session, outcome.new_ids)
+    else:
+        batches = await enqueue_process(session, outcome.new_ids, priority=1)
     await session.commit()
     return {**asdict(outcome), "new_ids": len(outcome.new_ids), "process_batches": batches}
 
@@ -91,8 +102,20 @@ async def retry_failed(session: AsyncSession, client: PoliteClient, payload: dic
         ).order_by(Item.id).limit(300)
     )).all())
     batches = await enqueue_process(session, ids)
+    article_ids = list((await session.scalars(
+        select(Article.id).where(
+            ((Article.status == ArticleStatus.FAILED) & (Article.attempts < knowledge.MAX_ATTEMPTS))
+            | ((Article.status == ArticleStatus.NEW) & (Article.created_at < cutoff))
+        ).order_by(Article.id).limit(100)
+    )).all())
+    await enqueue_articles(session, article_ids, priority=0)
     await session.commit()
-    return {"items": len(ids), "batches": batches}
+    return {"items": len(ids), "batches": batches, "articles": len(article_ids)}
+
+
+@handler("article_process")
+async def article_process(session: AsyncSession, client: PoliteClient, payload: dict[str, Any]) -> dict[str, Any]:
+    return await knowledge.process_article(session, client, payload["article_id"])
 
 
 @handler("heat")
@@ -143,6 +166,15 @@ async def digest_job(session: AsyncSession, client: PoliteClient, payload: dict[
 @handler("deadline_reminders")
 async def deadline_job(session: AsyncSession, client: PoliteClient, payload: dict[str, Any]) -> dict[str, Any]:
     return {"sent": await remind_deadlines(session, await load_tuning(session))}
+
+
+@handler("feedback_notify")
+async def feedback_notify(session: AsyncSession, client: PoliteClient, payload: dict[str, Any]) -> dict[str, Any]:
+    fb = await session.get(Feedback, payload["feedback_id"])
+    if fb is None:
+        return {"skipped": "反馈不存在"}
+    await send_feishu(format_feedback(fb))  # 失败抛出，由队列重试
+    return {"sent": True}
 
 
 @handler("maintenance")

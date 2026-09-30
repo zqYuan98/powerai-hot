@@ -86,3 +86,61 @@ class JobStatus(StrEnum):
 class DigestKind(StrEnum):
     DAILY = "daily"
     WEEKLY = "weekly"
+
+
+# ---------- 知识库 ----------
+
+class KnowledgeDomain(StrEnum):
+    TRANSMISSION = "transmission"    # 输电线路
+    SUBSTATION = "substation"        # 变电站（一次/二次）
+    DISTRIBUTION = "distribution"    # 配电网
+    CIVIL = "civil"                  # 土建与基础
+    COMMISSIONING = "commissioning"  # 调试试验
+    INSPECTION = "inspection"        # 智能运检（无人机、在线监测、AI 视觉）
+    RENEWABLE = "renewable"          # 新能源与储能并网
+    GENERAL = "general"              # 综合 / 其他
+
+
+class KnowledgeType(StrEnum):
+    PRINCIPLE = "principle"        # 原理科普
+    CONSTRUCTION = "construction"  # 施工工艺 / 工法
+    STANDARD = "standard"          # 标准规范解读
+    DESIGN = "design"              # 设计方案 / 典型案例
+    SAFETY = "safety"              # 安全与事故案例
+    COST = "cost"                  # 造价与定额
+    BIDDING = "bidding"            # 招投标实务
+    MANAGEMENT = "management"      # 项目管理
+    TECH = "tech"                  # 新技术新装备
+
+
+DOMAIN_LABELS: dict[str, str] = {
+    KnowledgeDomain.TRANSMISSION: "输电线路",
+    KnowledgeDomain.SUBSTATION: "变电站",
+    KnowledgeDomain.DISTRIBUTION: "配电网",
+    KnowledgeDomain.CIVIL: "土建与基础",
+    KnowledgeDomain.COMMISSIONING: "调试试验",
+    KnowledgeDomain.INSPECTION: "智能运检",
+    KnowledgeDomain.RENEWABLE: "新能源与储能",
+    KnowledgeDomain.GENERAL: "综合",
+}
+
+KTYPE_LABELS: dict[str, str] = {
+    KnowledgeType.PRINCIPLE: "原理科普",
+    KnowledgeType.CONSTRUCTION: "施工工艺",
+    KnowledgeType.STANDARD: "标准规范",
+    KnowledgeType.DESIGN: "设计方案",
+    KnowledgeType.SAFETY: "安全与事故",
+    KnowledgeType.COST: "造价定额",
+    KnowledgeType.BIDDING: "招投标实务",
+    KnowledgeType.MANAGEMENT: "项目管理",
+    KnowledgeType.TECH: "新技术装备",
+}
+
+
+class ArticleStatus(StrEnum):
+    NEW = "new"              # 待抓取 / 待分析
+    ANALYZED = "analyzed"    # 已做成知识卡片，对外展示
+    REJECTED = "rejected"    # 质量不够、营销软文或不是电力专业知识
+    DUPLICATE = "duplicate"  # 与已收录文章重复（多为公众号转载）
+    HIDDEN = "hidden"        # 管理员手动隐藏
+    FAILED = "failed"        # 抓取或模型失败，可重试

@@ -7,6 +7,7 @@ import { Suspense } from "react";
 
 import { cn } from "@/lib/cn";
 
+import { MoreMenu } from "./MoreMenu";
 import { isActive, NAV } from "./nav";
 import { SearchBox } from "./SearchBox";
 import { ThemeToggle } from "./ThemeToggle";
@@ -22,7 +23,7 @@ export function TopNav() {
           <span className="hidden sm:inline">电力基建情报站</span>
         </Link>
         <nav className="hidden items-center gap-0.5 md:flex" aria-label="主导航">
-          {NAV.slice(0, 6).map((n) => (
+          {NAV.map((n) => (
             <Link
               key={n.href}
               href={n.href}
@@ -41,15 +42,7 @@ export function TopNav() {
             <SearchBox />
           </Suspense>
           <ThemeToggle />
-          <Link
-            href="/settings"
-            className={cn(
-              "hidden rounded-md px-2.5 py-1.5 text-sm md:block",
-              isActive(pathname, "/settings") ? "font-medium text-ink" : "text-muted hover:text-ink",
-            )}
-          >
-            设置
-          </Link>
+          <MoreMenu />
         </div>
       </div>
     </header>

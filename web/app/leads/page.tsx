@@ -7,6 +7,7 @@ import { Badge, Empty, Field, inputClass, PageHeader } from "@/components/ui";
 import { api } from "@/lib/api.server";
 import { BIZ_LABEL, CHANNEL_LABEL, FOLLOW_LABEL, formatAmount, formatDate, STAGE_LABEL } from "@/lib/format";
 import type { LeadPage, LeadRow } from "@/lib/types";
+import { isAdmin } from "@/lib/viewer";
 
 export const metadata: Metadata = { title: "商机" };
 
@@ -36,7 +37,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   const sp = await searchParams;
   const offset = Math.max(0, Number(sp.offset ?? 0) || 0);
   const sort = (sp.sort && sp.sort in SORTS ? sp.sort : "recent") as keyof typeof SORTS;
-  const [data, provinces] = await Promise.all([
+  const [data, provinces, admin] = await Promise.all([
     api<LeadPage>("/leads", {
       q: sp.q,
       stage: sp.stage,
@@ -51,6 +52,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
       limit: PAGE,
     }),
     api<string[]>("/leads/provinces"),
+    isAdmin(),
   ]);
   const pageHref = (o: number) => {
     const p = new URLSearchParams(Object.entries(sp).filter((e): e is [string, string] => !!e[1]));
@@ -98,16 +100,18 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
             ))}
           </select>
         </Field>
-        <Field label="跟进">
-          <select name="follow" defaultValue={sp.follow ?? ""} className={inputClass}>
-            <option value="">未忽略的</option>
-            {Object.entries(FOLLOW_LABEL).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </Field>
+        {admin ? (
+          <Field label="跟进">
+            <select name="follow" defaultValue={sp.follow ?? ""} className={inputClass}>
+              <option value="">未忽略的</option>
+              {Object.entries(FOLLOW_LABEL).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </Field>
+        ) : null}
         <Field label="金额 ≥（万元）">
           <input name="min_amount_wan" type="number" min={0} defaultValue={sp.min_amount_wan} className={inputClass} />
         </Field>
@@ -130,7 +134,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
             ))}
           </select>
         </Field>
-        <label className="col-span-2 flex items-center gap-2 self-end pb-2 text-sm text-ink-2">
+        <label className={`${admin ? "col-span-2" : "col-span-1"} flex items-center gap-2 self-end pb-2 text-sm text-ink-2`}>
           <input type="checkbox" name="open_only" value="1" defaultChecked={sp.open_only === "1"} className="size-4 accent-accent" />
           只看未截止
         </label>
@@ -160,7 +164,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                   <th className="px-3 py-2 text-right font-medium whitespace-nowrap">电压</th>
                   <th className="px-3 py-2 font-medium whitespace-nowrap">截止</th>
                   <th className="px-3 py-2 text-right font-medium whitespace-nowrap">匹配</th>
-                  <th className="px-3 py-2 font-medium whitespace-nowrap">跟进</th>
+                  {admin ? <th className="px-3 py-2 font-medium whitespace-nowrap">跟进</th> : null}
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -190,9 +194,11 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                     <td className="px-3 py-2.5 text-right">
                       <ScoreBadge score={row.lead.match_score} />
                     </td>
-                    <td className="px-3 py-2.5">
-                      <FollowControl itemId={row.item.id} status={row.lead.follow_status} compact />
-                    </td>
+                    {admin ? (
+                      <td className="px-3 py-2.5">
+                        <FollowControl itemId={row.item.id} status={row.lead.follow_status} compact />
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>
@@ -212,9 +218,11 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                   {row.lead.voltage_kv ? <span>{row.lead.voltage_kv}kV</span> : null}
                   {row.lead.province ? <span>{row.lead.province}</span> : null}
                   <DeadlineBadge iso={row.lead.deadline_at} />
-                  <span className="ml-auto">
-                    <FollowControl itemId={row.item.id} status={row.lead.follow_status} compact />
-                  </span>
+                  {admin ? (
+                    <span className="ml-auto">
+                      <FollowControl itemId={row.item.id} status={row.lead.follow_status} compact />
+                    </span>
+                  ) : null}
                 </div>
               </div>
             ))}

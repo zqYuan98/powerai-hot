@@ -1,4 +1,4 @@
-"""订阅匹配与飞书推送。notifications 表的唯一约束保证不重复推送。"""
+"""订阅匹配与飞书推送（含访客反馈提醒）。notifications 表的唯一约束保证不重复推送。"""
 from __future__ import annotations
 
 import logging
@@ -12,7 +12,7 @@ from sqlalchemy.orm import selectinload
 
 from app.collectors.textutil import CN_TZ
 from app.config import settings
-from app.models import Item, Lead, Notification, WatchRule
+from app.models import Feedback, Item, Lead, Notification, WatchRule
 from app.models.enums import CHANNEL_LABELS
 from app.pipeline.tuning import Tuning
 
@@ -61,6 +61,16 @@ def format_message(item: Item, headline: str) -> str:
     lines.append(f"{CHANNEL_LABELS.get(item.channel, item.channel)} · {item.source.name} · 评分 {item.score:.0f}"
                  if item.score is not None else item.source.name)
     lines.append(f"{settings.public_base_url}/items/{item.id}")
+    return "\n".join(lines)
+
+
+def format_feedback(fb: Feedback) -> str:
+    lines = [f"【访客反馈 #{fb.id}】", fb.content]
+    if fb.contact:
+        lines.append(f"联系方式：{fb.contact}")
+    if fb.page_url:
+        lines.append(f"来自页面：{fb.page_url}")
+    lines.append(f"{settings.public_base_url}/settings/feedback")
     return "\n".join(lines)
 
 

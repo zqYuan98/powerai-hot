@@ -1,8 +1,10 @@
 from app.models.tables import (
     EMBEDDING_DIM,
     AppSetting,
+    Article,
     Digest,
     EvalRun,
+    Feedback,
     GoldLabel,
     Item,
     Job,
@@ -18,8 +20,10 @@ from app.models.tables import (
 __all__ = [
     "EMBEDDING_DIM",
     "AppSetting",
+    "Article",
     "Digest",
     "EvalRun",
+    "Feedback",
     "GoldLabel",
     "Item",
     "Job",

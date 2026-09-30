@@ -328,6 +328,79 @@ class EvalRun(Base):
     finished_at: Mapped[datetime | None] = mapped_column(TS)
 
 
+class Article(Base):
+    """知识库文章：公众号、专业网站上值得学习的行业知识，与资讯条目分开存放、分开处理。
+
+    对外只展示 AI 提炼的知识卡片与原文链接；正文仅供管理员与模型分析使用，不会被维护任务清理。
+    """
+
+    __tablename__ = "articles"
+    __table_args__ = (
+        Index("ix_articles_visible", "status", text("score DESC")),
+        Index("ix_articles_created", text("created_at DESC")),
+        Index(
+            "ix_articles_embedding",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    source_id: Mapped[int | None] = mapped_column(ForeignKey("sources.id", ondelete="SET NULL"))  # 空 = 手动收录
+    url: Mapped[str] = mapped_column(Text)
+    url_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    account: Mapped[str | None] = mapped_column(String(128))  # 公众号 / 作者 / 站点名
+    title: Mapped[str] = mapped_column(Text)
+    content_text: Mapped[str | None] = mapped_column(Text)
+    published_at: Mapped[datetime | None] = mapped_column(TS)
+    created_at: Mapped[datetime] = mapped_column(TS, server_default=NOW)
+
+    status: Mapped[str] = mapped_column(String(12), default="new")
+    status_reason: Mapped[str | None] = mapped_column(Text)
+    attempts: Mapped[int] = mapped_column(SmallInteger, default=0)
+    analyzed_at: Mapped[datetime | None] = mapped_column(TS)
+    duplicate_of: Mapped[int | None] = mapped_column(ForeignKey("articles.id", ondelete="SET NULL"))
+    note: Mapped[str | None] = mapped_column(Text)  # 管理员的收录备注，不对外
+
+    # 知识卡片
+    title_zh: Mapped[str | None] = mapped_column(Text)
+    summary: Mapped[str | None] = mapped_column(Text)
+    key_points: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
+    scenarios: Mapped[str | None] = mapped_column(Text)     # 适用场景
+    solution_use: Mapped[str | None] = mapped_column(Text)  # 可用于哪类方案的哪部分
+    standards: Mapped[list[str]] = mapped_column(ARRAY(String(64)), default=list)  # 已回原文核验
+    domain: Mapped[str] = mapped_column(String(16), default="general")
+    ktype: Mapped[str] = mapped_column(String(16), default="principle")
+    tags: Mapped[list[str]] = mapped_column(ARRAY(String(32)), default=list)
+
+    # 四维质量 0-10：深度、实用性、准确性、原创性
+    d_depth: Mapped[int | None] = mapped_column(SmallInteger)
+    d_practical: Mapped[int | None] = mapped_column(SmallInteger)
+    d_accuracy: Mapped[int | None] = mapped_column(SmallInteger)
+    d_original: Mapped[int | None] = mapped_column(SmallInteger)
+    score: Mapped[float | None] = mapped_column(Float)
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBEDDING_DIM))
+
+    source: Mapped[Source | None] = relationship(lazy="joined")
+
+
+class Feedback(Base):
+    """访客反馈。提交后由 worker 推送飞书，在后台「反馈」页处理。"""
+
+    __tablename__ = "feedback"
+    __table_args__ = (Index("ix_feedback_created", text("created_at DESC")),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    content: Mapped[str] = mapped_column(Text)
+    contact: Mapped[str | None] = mapped_column(String(200))   # 访客自愿留下的邮箱/微信
+    page_url: Mapped[str | None] = mapped_column(Text)         # 从哪个页面来
+    ip: Mapped[str | None] = mapped_column(String(64))
+    user_agent: Mapped[str | None] = mapped_column(String(300))
+    status: Mapped[str] = mapped_column(String(8), default="new")  # new | done
+    created_at: Mapped[datetime] = mapped_column(TS, server_default=NOW)
+
+
 class AppSetting(Base):
     __tablename__ = "app_settings"
 

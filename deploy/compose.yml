@@ -64,6 +64,7 @@ services:
     restart: unless-stopped
     environment:
       BACKEND_URL: http://api:8000
+      SITE_ICP: ${SITE_ICP:-}
     depends_on:
       api:
         condition: service_healthy

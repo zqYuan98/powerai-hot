@@ -77,10 +77,29 @@ export interface paths {
         };
         /**
          * Search
-         * @description 召回：关键词（pg_trgm 加速）+ 语义（pgvector）；排序：bge-reranker 重排。
-         *     未配置 Embedding 时退化为关键词命中、按时间倒序。
+         * @description 访客按 IP 限频：每次搜索都要调向量与重排模型。
          */
         get: operations["search_api_items_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/items/by-ids": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Items By Ids
+         * @description 按给定顺序取卡片（访客存在本机的收藏）；不存在或未完成精读的静默跳过。
+         */
+        get: operations["items_by_ids_api_items_by_ids_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -139,23 +158,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/leads/{item_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Patch Lead */
-        patch: operations["patch_lead_api_leads__item_id__patch"];
         trace?: never;
     };
     "/api/hot": {
@@ -243,6 +245,287 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/knowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Knowledge */
+        get: operations["list_knowledge_api_knowledge_get"];
+        put?: never;
+        /**
+         * Submit Knowledge
+         * @description 粘贴链接收录；抓不到正文（公众号风控、纯图片）时可以连同正文一起提交。
+         */
+        post: operations["submit_knowledge_api_knowledge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/knowledge/facets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Knowledge Facets */
+        get: operations["knowledge_facets_api_knowledge_facets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/knowledge/related": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Related To Item
+         * @description 与一条资讯/商机语义相近的知识（没配置 Embedding 或没有足够接近的就返回空）。
+         */
+        get: operations["related_to_item_api_knowledge_related_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/knowledge/{article_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Knowledge */
+        get: operations["get_knowledge_api_knowledge__article_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Knowledge */
+        delete: operations["delete_knowledge_api_knowledge__article_id__delete"];
+        options?: never;
+        head?: never;
+        /** Patch Knowledge */
+        patch: operations["patch_knowledge_api_knowledge__article_id__patch"];
+        trace?: never;
+    };
+    "/api/meta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Meta */
+        get: operations["meta_api_meta_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/site/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Feedback */
+        post: operations["submit_feedback_api_site_feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 最近的精选或全部动态 */
+        get: operations["v1_items_api_v1_items_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 按关键词与语义搜索全部已精读条目 */
+        get: operations["v1_search_api_v1_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 结构化商机（招标、中标、项目、规划） */
+        get: operations["v1_leads_api_v1_leads_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 当前热点事件（按独立信源数与时间衰减排序） */
+        get: operations["v1_hot_stories_api_v1_hot_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stories/{story_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 一个事件的时间线与 AI 综述 */
+        get: operations["v1_story_detail_api_v1_stories__story_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 电力基建知识库：公众号与专业网站文章的知识卡片 */
+        get: operations["v1_knowledge_list_api_v1_knowledge_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dailies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 日报 / 周报目录 */
+        get: operations["v1_dailies_api_v1_dailies_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dailies/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 最新一期日报 / 周报 */
+        get: operations["v1_daily_latest_api_v1_dailies_latest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dailies/{day}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 指定日期的日报 / 周报 */
+        get: operations["v1_daily_api_v1_dailies__day__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/leads/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Lead */
+        patch: operations["patch_lead_api_leads__item_id__patch"];
+        trace?: never;
+    };
     "/api/digests/{kind}/generate": {
         parameters: {
             query?: never;
@@ -258,6 +541,57 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/knowledge/{article_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry Knowledge */
+        post: operations["retry_knowledge_api_knowledge__article_id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Feedback */
+        get: operations["list_feedback_api_feedback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/feedback/{feedback_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Feedback */
+        patch: operations["patch_feedback_api_feedback__feedback_id__patch"];
         trace?: never;
     };
     "/api/gold/stats": {
@@ -340,23 +674,6 @@ export interface paths {
         };
         /** Get Run */
         get: operations["get_run_api_eval_runs__run_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/meta": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Meta */
-        get: operations["meta_api_meta_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -562,6 +879,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * ArticleStatus
+         * @enum {string}
+         */
+        ArticleStatus: "new" | "analyzed" | "rejected" | "duplicate" | "hidden" | "failed";
         /**
          * BizLine
          * @enum {string}
@@ -792,6 +1114,62 @@ export interface components {
             split: "development" | "holdout" | "all";
             /** Label */
             label?: string | null;
+        };
+        /** FacetCount */
+        FacetCount: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Count */
+            count: number;
+        };
+        /** FeedbackAck */
+        FeedbackAck: {
+            /** Id */
+            id: number;
+        };
+        /** FeedbackIn */
+        FeedbackIn: {
+            /** Content */
+            content: string;
+            /** Contact */
+            contact?: string | null;
+            /** Page Url */
+            page_url?: string | null;
+        };
+        /** FeedbackOut */
+        FeedbackOut: {
+            /** Id */
+            id: number;
+            /** Content */
+            content: string;
+            /** Contact */
+            contact: string | null;
+            /** Page Url */
+            page_url: string | null;
+            /** Ip */
+            ip: string | null;
+            /** User Agent */
+            user_agent: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "done";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** FeedbackPatch */
+        FeedbackPatch: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "done";
         };
         /**
          * FollowStatus
@@ -1063,6 +1441,178 @@ export interface components {
          * @enum {string}
          */
         JobStatus: "queued" | "running" | "done" | "failed";
+        /** KnowledgeCard */
+        KnowledgeCard: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Original Title */
+            original_title: string;
+            /** Url */
+            url: string;
+            /** Account */
+            account: string | null;
+            /** Published At */
+            published_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            domain: components["schemas"]["KnowledgeDomain"];
+            ktype: components["schemas"]["KnowledgeType"];
+            /** Tags */
+            tags: string[];
+            /** Summary */
+            summary: string | null;
+            /** Key Points */
+            key_points: string[];
+            /** Scenarios */
+            scenarios: string | null;
+            /** Solution Use */
+            solution_use: string | null;
+            /** Standards */
+            standards: string[];
+            /** Score */
+            score: number | null;
+            /** Featured */
+            featured: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "analyzed" | "rejected" | "duplicate" | "hidden" | "failed";
+            /** Status Reason */
+            status_reason: string | null;
+        };
+        /** KnowledgeDetail */
+        KnowledgeDetail: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Original Title */
+            original_title: string;
+            /** Url */
+            url: string;
+            /** Account */
+            account: string | null;
+            /** Published At */
+            published_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            domain: components["schemas"]["KnowledgeDomain"];
+            ktype: components["schemas"]["KnowledgeType"];
+            /** Tags */
+            tags: string[];
+            /** Summary */
+            summary: string | null;
+            /** Key Points */
+            key_points: string[];
+            /** Scenarios */
+            scenarios: string | null;
+            /** Solution Use */
+            solution_use: string | null;
+            /** Standards */
+            standards: string[];
+            /** Score */
+            score: number | null;
+            /** Featured */
+            featured: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "analyzed" | "rejected" | "duplicate" | "hidden" | "failed";
+            /** Status Reason */
+            status_reason: string | null;
+            dims: components["schemas"]["KnowledgeDims"];
+            /** Related */
+            related: components["schemas"]["KnowledgeCard"][];
+            /** Content Text */
+            content_text: string | null;
+            /** Note */
+            note: string | null;
+            /** Duplicate Of */
+            duplicate_of: number | null;
+        };
+        /** KnowledgeDims */
+        KnowledgeDims: {
+            /** Depth */
+            depth: number | null;
+            /** Practical */
+            practical: number | null;
+            /** Accuracy */
+            accuracy: number | null;
+            /** Originality */
+            originality: number | null;
+        };
+        /**
+         * KnowledgeDomain
+         * @enum {string}
+         */
+        KnowledgeDomain: "transmission" | "substation" | "distribution" | "civil" | "commissioning" | "inspection" | "renewable" | "general";
+        /** KnowledgeFacets */
+        KnowledgeFacets: {
+            /** Total */
+            total: number;
+            /** Domains */
+            domains: components["schemas"]["FacetCount"][];
+            /** Types */
+            types: components["schemas"]["FacetCount"][];
+            /** Status */
+            status: {
+                [key: string]: number;
+            };
+        };
+        /** KnowledgePage */
+        KnowledgePage: {
+            /** Items */
+            items: components["schemas"]["KnowledgeCard"][];
+            /** Total */
+            total: number;
+        };
+        /** KnowledgePatch */
+        KnowledgePatch: {
+            /** Note */
+            note?: string | null;
+            /** Hidden */
+            hidden?: boolean | null;
+            domain?: components["schemas"]["KnowledgeDomain"] | null;
+            ktype?: components["schemas"]["KnowledgeType"] | null;
+        };
+        /** KnowledgeSubmit */
+        KnowledgeSubmit: {
+            /** Url */
+            url: string;
+            /** Title */
+            title?: string | null;
+            /**
+             * Content
+             * @description 抓不到正文时直接粘贴
+             */
+            content?: string | null;
+            /** Note */
+            note?: string | null;
+        };
+        /** KnowledgeSubmitAck */
+        KnowledgeSubmitAck: {
+            /** Id */
+            id: number;
+            /** Existed */
+            existed: boolean;
+            /** Status */
+            status: string;
+        };
+        /**
+         * KnowledgeType
+         * @enum {string}
+         */
+        KnowledgeType: "principle" | "construction" | "standard" | "design" | "safety" | "cost" | "bidding" | "management" | "tech";
         /** LeadOut */
         LeadOut: {
             /** Project Name */
@@ -1126,6 +1676,8 @@ export interface components {
             channels: components["schemas"]["ChannelCount"][];
             /** Last Collect At */
             last_collect_at: string | null;
+            /** Sources Enabled */
+            sources_enabled: number;
             /** Llm Enabled */
             llm_enabled: boolean;
             /** Embedding Enabled */
@@ -1369,6 +1921,342 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        /** V1Digest */
+        V1Digest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "daily" | "weekly";
+            /**
+             * Date
+             * Format: date
+             * @description 期号日期（日报为当天 08:00 截止的那一天）
+             */
+            date: string;
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end: string;
+            /** Issue No */
+            issue_no: number;
+            /** Title */
+            title: string;
+            /** Lead Title */
+            lead_title: string | null;
+            /** Item Count */
+            item_count: number;
+            /** Url */
+            url: string;
+            /** Overview */
+            overview: string | null;
+            /** Sections */
+            sections: components["schemas"]["V1DigestSection"][];
+            /** Markdown */
+            markdown: string;
+        };
+        /** V1DigestBrief */
+        V1DigestBrief: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "daily" | "weekly";
+            /**
+             * Date
+             * Format: date
+             * @description 期号日期（日报为当天 08:00 截止的那一天）
+             */
+            date: string;
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end: string;
+            /** Issue No */
+            issue_no: number;
+            /** Title */
+            title: string;
+            /** Lead Title */
+            lead_title: string | null;
+            /** Item Count */
+            item_count: number;
+            /** Url */
+            url: string;
+        };
+        /** V1DigestSection */
+        V1DigestSection: {
+            /** Name */
+            name: string;
+            /** Comment */
+            comment: string;
+            /** Items */
+            items: components["schemas"]["V1Item"][];
+        };
+        /** V1HotStory */
+        V1HotStory: {
+            /** Rank */
+            rank: number;
+            /** Story Id */
+            story_id: number;
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
+            /** Heat */
+            heat: number;
+            /** Source Count */
+            source_count: number;
+            /** Item Count */
+            item_count: number;
+            /**
+             * First Seen At
+             * Format: date-time
+             */
+            first_seen_at: string;
+            /**
+             * Last Seen At
+             * Format: date-time
+             */
+            last_seen_at: string;
+            /**
+             * Is New
+             * @description 6 小时内首次出现
+             */
+            is_new: boolean;
+            lead_item: components["schemas"]["V1Item"];
+        };
+        /** V1Item */
+        V1Item: {
+            /** Id */
+            id: number;
+            /**
+             * Title
+             * @description 中文短标题（模型根据原文改写）
+             */
+            title: string;
+            /** Original Title */
+            original_title: string;
+            /**
+             * Url
+             * @description 站内阅读页
+             */
+            url: string;
+            /**
+             * Source Url
+             * @description 原文链接
+             */
+            source_url: string;
+            /** Source */
+            source: string;
+            /**
+             * Tier
+             * @description 信源档位：T1 官方一手 / T1_5 专业媒体 / T2 综合媒体
+             */
+            tier: string;
+            channel: components["schemas"]["Channel"];
+            /** Province */
+            province: string | null;
+            /** Summary */
+            summary: string | null;
+            /**
+             * Reason
+             * @description 推荐理由
+             */
+            reason: string | null;
+            /**
+             * Action
+             * @description 建议动作
+             */
+            action: string | null;
+            /** Tags */
+            tags: string[];
+            /**
+             * Score
+             * @description AI 评分 0–100
+             */
+            score: number | null;
+            /** Selected */
+            selected: boolean;
+            /** Published At */
+            published_at: string | null;
+            /**
+             * First Seen At
+             * Format: date-time
+             */
+            first_seen_at: string;
+            /** Story Id */
+            story_id: number | null;
+            /**
+             * Also Reported
+             * @description 另有几家信源报道了同一件事
+             */
+            also_reported: number;
+            lead: components["schemas"]["V1Lead"] | null;
+        };
+        /** V1ItemPage */
+        V1ItemPage: {
+            /** Items */
+            items: components["schemas"]["V1Item"][];
+            /**
+             * Next Cursor
+             * @description 下一页游标；为空表示没有更多
+             */
+            next_cursor: string | null;
+        };
+        /** V1Knowledge */
+        V1Knowledge: {
+            /** Id */
+            id: number;
+            /**
+             * Title
+             * @description 中文短标题（模型改写，去掉标题党）
+             */
+            title: string;
+            /** Original Title */
+            original_title: string;
+            /**
+             * Url
+             * @description 站内知识卡片页
+             */
+            url: string;
+            /**
+             * Source Url
+             * @description 原文链接
+             */
+            source_url: string;
+            /**
+             * Account
+             * @description 公众号 / 作者 / 站点
+             */
+            account: string | null;
+            /** Published At */
+            published_at: string | null;
+            domain: components["schemas"]["KnowledgeDomain"];
+            ktype: components["schemas"]["KnowledgeType"];
+            /** Tags */
+            tags: string[];
+            /** Summary */
+            summary: string | null;
+            /**
+             * Key Points
+             * @description 3–5 条核心要点，仅来自原文
+             */
+            key_points: string[];
+            /**
+             * Scenarios
+             * @description 适用场景
+             */
+            scenarios: string | null;
+            /**
+             * Solution Use
+             * @description 可用于哪类方案的哪一部分
+             */
+            solution_use: string | null;
+            /**
+             * Standards
+             * @description 原文出现的标准规范编号（已回原文核验）
+             */
+            standards: string[];
+            /**
+             * Score
+             * @description 质量分 0–100（深度、实用性、准确性、原创性）
+             */
+            score: number | null;
+            /** Featured */
+            featured: boolean;
+        };
+        /** V1KnowledgePage */
+        V1KnowledgePage: {
+            /** Items */
+            items: components["schemas"]["V1Knowledge"][];
+            /** Total */
+            total: number;
+        };
+        /** V1Lead */
+        V1Lead: {
+            /** Project Name */
+            project_name: string | null;
+            /**
+             * Owner
+             * @description 业主 / 招标人
+             */
+            owner: string | null;
+            /** Province */
+            province: string | null;
+            /** Voltage Kv */
+            voltage_kv: number | null;
+            /**
+             * Amount Wan
+             * @description 金额（万元）
+             */
+            amount_wan: number | null;
+            stage: components["schemas"]["Stage"];
+            /**
+             * Bid No
+             * @description 招标 / 项目编号
+             */
+            bid_no: string | null;
+            /**
+             * Deadline At
+             * @description 投标截止时间
+             */
+            deadline_at: string | null;
+            /** Qualification */
+            qualification: string | null;
+            /**
+             * Winner
+             * @description 中标人（中标公示才有）
+             */
+            winner: string | null;
+            biz_line: components["schemas"]["BizLine"];
+            /**
+             * Match Score
+             * @description 与站点业务画像的匹配度 0–100
+             */
+            match_score: number;
+        };
+        /** V1LeadPage */
+        V1LeadPage: {
+            /** Items */
+            items: components["schemas"]["V1Item"][];
+            /** Total */
+            total: number;
+        };
+        /** V1Story */
+        V1Story: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
+            /**
+             * Digest
+             * @description AI 综述
+             */
+            digest: string | null;
+            /** Source Count */
+            source_count: number;
+            /** Item Count */
+            item_count: number;
+            /**
+             * First Seen At
+             * Format: date-time
+             */
+            first_seen_at: string;
+            /**
+             * Last Seen At
+             * Format: date-time
+             */
+            last_seen_at: string;
+            /**
+             * Timeline
+             * @description 按时间正序，最多最近 50 条
+             */
+            timeline: components["schemas"]["V1Item"][];
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -1381,6 +2269,13 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** Viewer */
+        Viewer: {
+            /** Admin */
+            admin: boolean;
+            /** Auth Required */
+            auth_required: boolean;
         };
         /** WatchRuleIn */
         WatchRuleIn: {
@@ -1511,7 +2406,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Ok"];
+                    "application/json": components["schemas"]["Viewer"];
                 };
             };
         };
@@ -1524,6 +2419,7 @@ export interface operations {
                 province?: string | null;
                 source_id?: number | null;
                 q?: string | null;
+                since?: string | null;
                 cursor?: string | null;
                 limit?: number;
             };
@@ -1558,6 +2454,37 @@ export interface operations {
             query: {
                 q: string;
                 limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemCard"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    items_by_ids_api_items_by_ids_get: {
+        parameters: {
+            query: {
+                ids: number[];
             };
             header?: never;
             path?: never;
@@ -1708,41 +2635,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": string[];
-                };
-            };
-        };
-    };
-    patch_lead_api_leads__item_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                item_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LeadPatch"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LeadOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1905,6 +2797,619 @@ export interface operations {
             };
         };
     };
+    list_knowledge_api_knowledge_get: {
+        parameters: {
+            query?: {
+                domain?: components["schemas"]["KnowledgeDomain"] | null;
+                ktype?: components["schemas"]["KnowledgeType"] | null;
+                q?: string | null;
+                featured?: boolean;
+                sort?: "score" | "recent";
+                status?: components["schemas"]["ArticleStatus"] | null;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgePage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_knowledge_api_knowledge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeSubmit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeSubmitAck"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    knowledge_facets_api_knowledge_facets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeFacets"];
+                };
+            };
+        };
+    };
+    related_to_item_api_knowledge_related_get: {
+        parameters: {
+            query: {
+                item_id: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeCard"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_knowledge_api_knowledge__article_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                article_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_knowledge_api_knowledge__article_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                article_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_knowledge_api_knowledge__article_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                article_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeCard"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    meta_api_meta_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meta"];
+                };
+            };
+        };
+    };
+    submit_feedback_api_site_feedback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackAck"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    v1_items_api_v1_items_get: {
+        parameters: {
+            query?: {
+                mode?: "selected" | "all";
+                window?: "24h" | "7d";
+                channel?: components["schemas"]["Channel"] | null;
+                /** @description 标题或摘要包含的关键词 */
+                q?: string | null;
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1ItemPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    v1_search_api_v1_search_get: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1Item"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    v1_leads_api_v1_leads_get: {
+        parameters: {
+            query?: {
+                stage?: components["schemas"]["Stage"] | null;
+                province?: string | null;
+                biz_line?: components["schemas"]["BizLine"] | null;
+                /** @description 只看未截止（无截止时间的也保留） */
+                open_only?: boolean;
+                min_amount_wan?: number | string | null;
+                min_voltage_kv?: number | null;
+                q?: string | null;
+                sort?: "recent" | "deadline" | "amount";
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1LeadPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    v1_hot_stories_api_v1_hot_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1HotStory"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    v1_story_detail_api_v1_stories__story_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1Story"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    v1_knowledge_list_api_v1_knowledge_get: {
+        parameters: {
+            query?: {
+                domain?: components["schemas"]["KnowledgeDomain"] | null;
+                ktype?: components["schemas"]["KnowledgeType"] | null;
+                /** @description 标题、摘要、要点、标签包含的关键词 */
+                q?: string | null;
+                sort?: "score" | "recent";
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1KnowledgePage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    v1_dailies_api_v1_dailies_get: {
+        parameters: {
+            query?: {
+                kind?: components["schemas"]["DigestKind"];
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1DigestBrief"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    v1_daily_latest_api_v1_dailies_latest_get: {
+        parameters: {
+            query?: {
+                kind?: components["schemas"]["DigestKind"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1Digest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    v1_daily_api_v1_dailies__day__get: {
+        parameters: {
+            query?: {
+                kind?: components["schemas"]["DigestKind"];
+            };
+            header?: never;
+            path: {
+                day: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1Digest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_lead_api_leads__item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeadPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     generate_api_digests__kind__generate_post: {
         parameters: {
             query: {
@@ -1925,6 +3430,104 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_knowledge_api_knowledge__article_id__retry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                article_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_feedback_api_feedback_get: {
+        parameters: {
+            query?: {
+                status?: ("new" | "done") | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_feedback_api_feedback__feedback_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                feedback_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackOut"];
                 };
             };
             /** @description Validation Error */
@@ -2177,26 +3780,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    meta_api_meta_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Meta"];
                 };
             };
         };

@@ -76,8 +76,18 @@ def migrated() -> None:
     command.upgrade(cfg, "head")
 
 
-TABLES = ("gold_labels", "eval_runs", "notifications", "leads", "items", "stories", "source_runs", "sources",
-          "watch_rules", "digests", "jobs", "llm_calls", "app_settings")
+TABLES = ("articles", "feedback", "gold_labels", "eval_runs", "notifications", "leads", "items", "stories",
+          "source_runs", "sources", "watch_rules", "digests", "jobs", "llm_calls", "app_settings")
+
+
+@pytest.fixture
+async def api():
+    import httpx
+
+    from app.main import app
+
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        yield client
 
 
 @pytest.fixture

@@ -1,4 +1,7 @@
-"""路由共用：游标编解码、ORM → 卡片序列化。"""
+"""路由共用：游标编解码、ORM → 卡片序列化。
+
+private=False（访客）时抹掉管理员的个人数据：收藏、已读、商机跟进状态与备注。
+"""
 from __future__ import annotations
 
 import base64
@@ -9,7 +12,8 @@ from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Item, Story
+from app.models import Item, Lead, Story
+from app.models.enums import FollowStatus
 from app.schemas.dto import ItemCard, LeadOut, SourceBrief
 
 
@@ -26,7 +30,14 @@ def decode_cursor(cursor: str) -> tuple[datetime, int]:
         raise HTTPException(400, "无效的游标") from exc
 
 
-def to_card(item: Item, source_count: int | None = None) -> ItemCard:
+def to_lead(lead: Lead, *, private: bool = False) -> LeadOut:
+    out = LeadOut.model_validate(lead)
+    if private:
+        return out
+    return out.model_copy(update={"follow_status": FollowStatus.NEW, "follow_note": None, "remind_at": None})
+
+
+def to_card(item: Item, source_count: int | None = None, *, private: bool = False) -> ItemCard:
     return ItemCard(
         id=item.id,
         title=item.title,
@@ -46,9 +57,9 @@ def to_card(item: Item, source_count: int | None = None) -> ItemCard:
         first_seen_at=item.first_seen_at,
         story_id=item.story_id,
         also_reported=max((source_count or 1) - 1, 0),
-        starred=item.starred_at is not None,
-        read=item.read_at is not None,
-        lead=LeadOut.model_validate(item.lead) if item.lead else None,
+        starred=private and item.starred_at is not None,
+        read=private and item.read_at is not None,
+        lead=to_lead(item.lead, private=private) if item.lead else None,
     )
 
 
@@ -61,6 +72,6 @@ def card_query() -> Select[Item, int]:
     )
 
 
-async def fetch_cards(session: AsyncSession, stmt: Select[Item, int]) -> list[ItemCard]:
+async def fetch_cards(session: AsyncSession, stmt: Select[Item, int], *, private: bool = False) -> list[ItemCard]:
     rows = (await session.execute(stmt)).all()
-    return [to_card(item, count) for item, count in rows]
+    return [to_card(item, count, private=private) for item, count in rows]

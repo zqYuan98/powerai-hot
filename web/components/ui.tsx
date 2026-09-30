@@ -94,3 +94,22 @@ export function Field({ label, children, className }: { label: string; children:
 
 export const inputClass =
   "h-9 w-full rounded-md border border-line bg-surface px-2.5 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none";
+
+/** 阅读类页面（关于、接入、更新日志、反馈）：正文 + 桌面端右侧栏。 */
+export function ReadingLayout({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
+  return (
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="min-w-0 max-w-3xl">{children}</div>
+      {aside ? <aside className="space-y-4">{aside}</aside> : null}
+    </div>
+  );
+}
+
+export function AsideCard({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
+  return (
+    <Card className={cn("p-4", className)}>
+      <h2 className="mb-2 text-sm font-semibold text-ink">{title}</h2>
+      {children}
+    </Card>
+  );
+}

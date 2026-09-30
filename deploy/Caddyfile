@@ -10,7 +10,8 @@ header {
 	-Server
 }
 
-@backend path /api/* /health
+# 公开接口（REST v1、MCP、RSS、llms.txt）也由后端直接提供
+@backend path /api/* /health /feed.xml /feed/* /llms.txt
 handle @backend {
 	reverse_proxy api:8000
 }

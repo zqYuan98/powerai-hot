@@ -11,6 +11,7 @@ const TABS = [
   { key: "/settings/gold", href: "/settings/gold", label: "精选校准" },
   { key: "/settings/usage", href: "/settings/usage", label: "模型用量" },
   { key: "/settings/jobs", href: "/settings/jobs", label: "任务队列" },
+  { key: "/settings/feedback", href: "/settings/feedback", label: "访客反馈" },
 ];
 
 export function SettingsTabs() {

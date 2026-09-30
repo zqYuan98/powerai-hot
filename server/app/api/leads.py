@@ -1,4 +1,4 @@
-"""商机看板：结构化筛选 + 个人跟进状态。"""
+"""商机看板：结构化筛选 + 个人跟进状态（跟进只对管理员可见、可改）。"""
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -9,14 +9,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, nulls_last, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.common import card_query, fetch_cards
+from app.api.common import card_query, fetch_cards, to_lead
 from app.api.items import TITLE_EXPR
+from app.auth import Admin
 from app.db import get_session
 from app.models import Item, Lead
 from app.models.enums import BizLine, FollowStatus, ItemStatus, Stage
 from app.schemas.dto import LeadOut, LeadPage, LeadPatch, LeadRow
 
 router = APIRouter(prefix="/leads", tags=["leads"])
+admin_router = APIRouter(prefix="/leads", tags=["leads"])
 Session = Annotated[AsyncSession, Depends(get_session)]
 
 SORTS: dict[str, tuple[Any, ...]] = {
@@ -30,6 +32,7 @@ SORTS: dict[str, tuple[Any, ...]] = {
 @router.get("", response_model=LeadPage)
 async def list_leads(
     session: Session,
+    admin: Admin,
     stage: Annotated[list[Stage] | None, Query()] = None,
     province: Annotated[list[str] | None, Query()] = None,
     biz_line: Annotated[list[BizLine] | None, Query()] = None,
@@ -49,7 +52,8 @@ async def list_leads(
         conds.append(Lead.province.in_(province))
     if biz_line:
         conds.append(Lead.biz_line.in_(biz_line))
-    conds.append(Lead.follow_status.in_(follow) if follow else Lead.follow_status != FollowStatus.IGNORED)
+    # 管理员忽略的商机对访客也隐藏；按跟进状态筛选只对管理员有效
+    conds.append(Lead.follow_status.in_(follow) if follow and admin else Lead.follow_status != FollowStatus.IGNORED)
     if min_amount_wan is not None:
         conds.append(Lead.amount_wan >= min_amount_wan)
     if min_voltage_kv is not None:
@@ -62,7 +66,7 @@ async def list_leads(
 
     total = await session.scalar(select(func.count()).select_from(Lead).join(Item).where(*conds)) or 0
     cards = await fetch_cards(session, card_query().join(Lead, Lead.item_id == Item.id).where(*conds)
-                              .order_by(*SORTS[sort]).offset(offset).limit(limit))
+                              .order_by(*SORTS[sort]).offset(offset).limit(limit), private=admin)
     return LeadPage(items=[LeadRow(item=c, lead=c.lead) for c in cards if c.lead], total=total)
 
 
@@ -75,7 +79,7 @@ async def lead_provinces(session: Session) -> list[str]:
     return [p for p in rows if p]
 
 
-@router.patch("/{item_id}", response_model=LeadOut)
+@admin_router.patch("/{item_id}", response_model=LeadOut)
 async def patch_lead(session: Session, item_id: int, body: LeadPatch) -> LeadOut:
     lead = await session.get(Lead, item_id)
     if lead is None:
@@ -84,4 +88,4 @@ async def patch_lead(session: Session, item_id: int, body: LeadPatch) -> LeadOut
         setattr(lead, field, value)
     await session.commit()
     await session.refresh(lead)
-    return LeadOut.model_validate(lead)
+    return to_lead(lead, private=True)

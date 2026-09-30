@@ -4,11 +4,13 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, literal, or_, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.common import card_query, decode_cursor, encode_cursor, fetch_cards, to_card
+from app.auth import Admin
+from app.core.ratelimit import SEARCH_LIMIT, client_ip
 from app.db import get_session
 from app.llm.client import LlmError, embed, rerank
 from app.models import Item, Story
@@ -16,6 +18,7 @@ from app.models.enums import Channel, ItemStatus
 from app.schemas.dto import Dims, ItemCard, ItemDetail, ItemPatch, Page, StoryBrief
 
 router = APIRouter(prefix="/items", tags=["items"])
+admin_router = APIRouter(prefix="/items", tags=["items"])
 Session = Annotated[AsyncSession, Depends(get_session)]
 TITLE_EXPR = func.coalesce(Item.title_zh, "") + literal(" ") + Item.title  # 与 trgm 索引表达式一致
 RECALL = 40        # 每路召回条数
@@ -25,14 +28,18 @@ MIN_RERANK = 0.05  # 语义召回结果的最低重排分
 @router.get("", response_model=Page[ItemCard])
 async def list_items(
     session: Session,
+    admin: Admin,
     view: Literal["selected", "all", "starred", "screened"] = "selected",
     channel: Channel | None = None,
     province: str | None = None,
     source_id: int | None = None,
     q: Annotated[str | None, Query(max_length=100)] = None,
+    since: datetime | None = None,  # 只看此时刻之后发现的
     cursor: str | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 30,
 ) -> Page[ItemCard]:
+    if view in ("starred", "screened") and not admin:
+        raise HTTPException(401, "需要管理员登录")
     stmt = card_query()
     if view == "selected":
         stmt = stmt.where(Item.selected, Item.is_story_lead)
@@ -51,11 +58,13 @@ async def list_items(
     if q:
         pattern = f"%{q.strip()}%"
         stmt = stmt.where(or_(TITLE_EXPR.ilike(pattern), Item.summary.ilike(pattern)))
+    if since:
+        stmt = stmt.where(Item.first_seen_at >= since)
     if cursor:
         ts, last_id = decode_cursor(cursor)
         stmt = stmt.where(tuple_(Item.first_seen_at, Item.id) < tuple_(literal(ts), literal(last_id)))
     stmt = stmt.order_by(Item.first_seen_at.desc(), Item.id.desc()).limit(limit + 1)
-    cards = await fetch_cards(session, stmt)
+    cards = await fetch_cards(session, stmt, private=admin)
     next_cursor = None
     if len(cards) > limit:
         cards = cards[:limit]
@@ -64,15 +73,23 @@ async def list_items(
 
 
 @router.get("/search", response_model=list[ItemCard])
-async def search(session: Session, q: Annotated[str, Query(min_length=1, max_length=100)],
+async def search(request: Request, session: Session, admin: Admin,
+                 q: Annotated[str, Query(min_length=1, max_length=100)],
                  limit: Annotated[int, Query(ge=1, le=50)] = 30) -> list[ItemCard]:
+    """访客按 IP 限频：每次搜索都要调向量与重排模型。"""
+    if not admin:
+        SEARCH_LIMIT.check(client_ip(request))
+    return await search_cards(session, q, limit, private=admin)
+
+
+async def search_cards(session: AsyncSession, q: str, limit: int, *, private: bool = False) -> list[ItemCard]:
     """召回：关键词（pg_trgm 加速）+ 语义（pgvector）；排序：bge-reranker 重排。
     未配置 Embedding 时退化为关键词命中、按时间倒序。"""
     base = card_query().where(Item.status == ItemStatus.ANALYZED)
     pattern = f"%{q.strip()}%"
     keyword = await fetch_cards(session, base.where(
         or_(TITLE_EXPR.ilike(pattern), Item.summary.ilike(pattern))
-    ).order_by(Item.first_seen_at.desc()).limit(RECALL))
+    ).order_by(Item.first_seen_at.desc()).limit(RECALL), private=private)
     seen = {c.id for c in keyword}
     semantic: list[ItemCard] = []
     try:
@@ -82,7 +99,7 @@ async def search(session: Session, q: Annotated[str, Query(min_length=1, max_len
     if vectors:
         distance = Item.embedding.cosine_distance(vectors[0])
         semantic = await fetch_cards(session, base.where(Item.embedding.is_not(None), distance < 0.55)
-                                     .order_by(distance).limit(RECALL))
+                                     .order_by(distance).limit(RECALL), private=private)
     candidates = keyword + [c for c in semantic if c.id not in seen]
     try:
         scores = await rerank(q, [f"{c.title_zh or c.title}。{c.summary or ''}" for c in candidates])
@@ -95,27 +112,38 @@ async def search(session: Session, q: Annotated[str, Query(min_length=1, max_len
     return candidates[:limit]
 
 
+@router.get("/by-ids", response_model=list[ItemCard])
+async def items_by_ids(session: Session, admin: Admin,
+                       ids: Annotated[list[int], Query(max_length=100)]) -> list[ItemCard]:
+    """按给定顺序取卡片（访客存在本机的收藏）；不存在或未完成精读的静默跳过。"""
+    cards = await fetch_cards(session, card_query().where(Item.id.in_(ids), Item.status == ItemStatus.ANALYZED),
+                              private=admin)
+    by_id = {c.id: c for c in cards}
+    return [by_id[i] for i in dict.fromkeys(ids) if i in by_id]
+
+
 @router.get("/{item_id}", response_model=ItemDetail)
-async def get_item(session: Session, item_id: int) -> ItemDetail:
+async def get_item(session: Session, admin: Admin, item_id: int) -> ItemDetail:
     row = (await session.execute(card_query().where(Item.id == item_id))).first()
-    if row is None:
+    # 被淘汰、失败、待处理的条目只给管理员回溯
+    if row is None or (not admin and row[0].status != ItemStatus.ANALYZED):
         raise HTTPException(404, "条目不存在")
     item, source_count = row[0], row[1]
-    card = to_card(item, source_count)
+    card = to_card(item, source_count, private=admin)
     story = await session.get(Story, item.story_id) if item.story_id else None
     related: list[ItemCard] = []
     if story is not None:
         related = await fetch_cards(session, card_query().where(
             Item.story_id == story.id, Item.id != item.id, Item.status == ItemStatus.ANALYZED
-        ).order_by(Item.first_seen_at.desc()).limit(20))
-    if item.read_at is None:
+        ).order_by(Item.first_seen_at.desc()).limit(20), private=admin)
+    if admin and item.read_at is None:
         item.read_at = datetime.now(UTC)
         await session.commit()
     return ItemDetail(
         **card.model_dump(),
         content_html=item.content_html,
         content_text=None if item.content_html else item.content_text,
-        note=item.note,
+        note=item.note if admin else None,
         status=item.status,
         status_reason=item.status_reason,
         dims=Dims(relevance=item.d_relevance, opportunity=item.d_opportunity, certainty=item.d_certainty,
@@ -125,7 +153,7 @@ async def get_item(session: Session, item_id: int) -> ItemDetail:
     )
 
 
-@router.patch("/{item_id}", response_model=ItemCard)
+@admin_router.patch("/{item_id}", response_model=ItemCard)
 async def patch_item(session: Session, item_id: int, body: ItemPatch) -> ItemCard:
     item = await session.get(Item, item_id)
     if item is None:
@@ -139,5 +167,5 @@ async def patch_item(session: Session, item_id: int, body: ItemPatch) -> ItemCar
         item.note = body.note or None
     await session.commit()
     row = (await session.execute(card_query().where(Item.id == item_id))).one()
-    return to_card(row[0], row[1])
+    return to_card(row[0], row[1], private=True)
 

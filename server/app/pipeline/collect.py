@@ -17,6 +17,7 @@ from app.collectors.registry import build_collector
 from app.collectors.textutil import canonical_url, clean_text
 from app.core.htmlsanitize import sanitize_html
 from app.models import Item, Source, SourceRun
+from app.pipeline.knowledge import upsert_articles
 
 # 发布时间早于此的条目直接丢弃（历史存量不值得花模型钱）
 MAX_AGE_DAYS = 30
@@ -29,6 +30,11 @@ class CollectOutcome:
     new_ids: list[int]
     healthy: bool
     error: str | None
+    knowledge: bool = False  # 为真时 new_ids 是知识库文章 id
+
+
+def is_knowledge_source(source: Source) -> bool:
+    return (source.config or {}).get("target") == "knowledge"
 
 
 def _row(source: Source, raw: RawItem, now: datetime) -> dict[str, object]:
@@ -71,7 +77,9 @@ async def collect_source(session: AsyncSession, client: PoliteClient, source: So
     except Exception as exc:  # 采集器自身 bug 也要落到健康记录里
         result = CollectorResult.fail("network_error", f"{type(exc).__name__}: {exc}", parse="parse_error")
 
-    new_ids = await upsert_items(session, source, result.items) if result.items else []
+    knowledge = is_knowledge_source(source)
+    upsert = upsert_articles if knowledge else upsert_items
+    new_ids = await upsert(session, source, result.items) if result.items else []
     now = datetime.now(UTC)
     session.add(SourceRun(
         source_id=source.id,
@@ -93,7 +101,7 @@ async def collect_source(session: AsyncSession, client: PoliteClient, source: So
         source.fail_streak += 1
         source.last_error = result.error
     await session.commit()
-    return CollectOutcome(source.key, len(result.items), new_ids, result.healthy, result.error)
+    return CollectOutcome(source.key, len(result.items), new_ids, result.healthy, result.error, knowledge)
 
 
 async def due_sources(session: AsyncSession, now: datetime | None = None) -> list[Source]:

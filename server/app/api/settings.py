@@ -1,4 +1,4 @@
-"""设置与运维：信源健康、订阅规则、打分参数、模型用量、任务队列。"""
+"""后台设置与运维（仅管理员）：信源健康、订阅规则、打分参数、模型用量、任务队列。"""
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
@@ -8,16 +8,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import Integer, cast, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import auth_required
 from app.config import settings
 from app.db import get_session
 from app.models import Item, Job, LlmCall, Source, SourceRun, WatchRule
-from app.models.enums import CHANNEL_LABELS, Channel, ItemStatus, JobStatus
+from app.models.enums import ItemStatus, JobStatus
 from app.pipeline.tuning import Tuning, load_tuning, save_tuning
 from app.schemas.dto import (
-    ChannelCount,
     JobOut,
-    Meta,
     Ok,
     PipelineStats,
     SourceOut,
@@ -33,23 +30,6 @@ from app.worker.jobs import enqueue_process
 
 router = APIRouter(tags=["settings"])
 Session = Annotated[AsyncSession, Depends(get_session)]
-
-
-@router.get("/meta", response_model=Meta)
-async def meta(session: Session) -> Meta:
-    today = datetime.now(settings.tz).replace(hour=0, minute=0, second=0, microsecond=0)
-    counts = dict((await session.execute(
-        select(Item.channel, func.count()).where(Item.selected, Item.is_story_lead, Item.first_seen_at >= today)
-        .group_by(Item.channel)
-    )).all())
-    return Meta(
-        channels=[ChannelCount(channel=c, label=CHANNEL_LABELS[c], today=counts.get(c.value, 0)) for c in Channel],
-        last_collect_at=await session.scalar(select(func.max(Source.last_ok_at))),
-        llm_enabled=settings.llm_enabled,
-        embedding_enabled=settings.embedding_enabled,
-        push_enabled=bool(settings.feishu_webhook_url),
-        auth_required=auth_required(),
-    )
 
 
 # ---------- 信源 ----------

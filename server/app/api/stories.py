@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.common import card_query, fetch_cards
+from app.auth import Admin
 from app.db import get_session
 from app.models import Item, Story
 from app.models.enums import ItemStatus
@@ -19,7 +20,7 @@ Session = Annotated[AsyncSession, Depends(get_session)]
 
 
 @router.get("/hot", response_model=list[HotStory])
-async def hot(session: Session, hours: Annotated[int, Query(ge=6, le=168)] = 48,
+async def hot(session: Session, admin: Admin, hours: Annotated[int, Query(ge=6, le=168)] = 48,
               limit: Annotated[int, Query(ge=1, le=30)] = 10) -> list[HotStory]:
     now = datetime.now(UTC)
     stories = (await session.scalars(
@@ -30,7 +31,7 @@ async def hot(session: Session, hours: Annotated[int, Query(ge=6, le=168)] = 48,
         return []
     cards = await fetch_cards(session, card_query().where(
         Item.story_id.in_([s.id for s in stories]), Item.is_story_lead, Item.status == ItemStatus.ANALYZED
-    ))
+    ), private=admin)
     lead_by_story = {c.story_id: c for c in cards}
     out: list[HotStory] = []
     for story in stories:
@@ -45,12 +46,12 @@ async def hot(session: Session, hours: Annotated[int, Query(ge=6, le=168)] = 48,
 
 
 @router.get("/stories/{story_id}", response_model=StoryDetail)
-async def story_detail(session: Session, story_id: int) -> StoryDetail:
+async def story_detail(session: Session, admin: Admin, story_id: int) -> StoryDetail:
     story = await session.get(Story, story_id)
     if story is None:
         raise HTTPException(404, "事件不存在")
     timeline = await fetch_cards(session, card_query().where(
         Item.story_id == story_id, Item.status == ItemStatus.ANALYZED
-    ).order_by(Item.first_seen_at.asc(), Item.id.asc()))
+    ).order_by(Item.first_seen_at.asc(), Item.id.asc()), private=admin)
     return StoryDetail(story=StoryBrief.model_validate(story), digest=story.digest,
                        first_seen_at=story.first_seen_at, last_seen_at=story.last_seen_at, timeline=timeline)

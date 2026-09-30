@@ -12,7 +12,7 @@ from app.pipeline.collect import collect_source
 from app.pipeline.evaluate import confusion, format_report, run_eval, split_of, sweep
 from app.pipeline.process import process_items
 from app.pipeline.tuning import Tuning, save_tuning
-from tests.test_integration import api, fake_llm, mock_ccgp, seed_ccgp  # noqa: F401
+from tests.test_integration import fake_llm, mock_ccgp, seed_ccgp  # noqa: F401
 
 
 def case(gold: str, *, selected: bool, score: float | None, stage: str = "analyzed", forced: bool = False) -> dict:

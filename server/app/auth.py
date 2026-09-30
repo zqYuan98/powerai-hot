@@ -1,6 +1,7 @@
-"""单用户鉴权：口令登录 → HMAC 签名的 HttpOnly cookie。
+"""管理员鉴权：口令登录 → HMAC 签名的 HttpOnly cookie。
 
-开发环境未设置 APP_PASSWORD 时免登录；生产环境启动时强制校验口令与密钥强度（见 config）。
+前台内容匿名可读；写操作、后台设置与个人数据（收藏、笔记、商机跟进）只对管理员开放。
+开发环境未设置 APP_PASSWORD 时视为管理员；生产环境启动时强制校验口令与密钥强度（见 config）。
 """
 from __future__ import annotations
 
@@ -8,8 +9,9 @@ import base64
 import hashlib
 import hmac
 import time
+from typing import Annotated
 
-from fastapi import HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 
 from app.config import settings
 
@@ -46,8 +48,18 @@ def auth_required() -> bool:
     return bool(settings.app_password) or settings.env == "prod"
 
 
-async def require_user(request: Request) -> None:
-    if not auth_required():
-        return
-    if not verify_token(request.cookies.get(COOKIE_NAME)):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "请先登录")
+def is_admin(request: Request) -> bool:
+    return not auth_required() or verify_token(request.cookies.get(COOKIE_NAME))
+
+
+async def admin_flag(request: Request) -> bool:
+    return is_admin(request)
+
+
+# 公开接口用它区分访客与管理员：访客看不到个人数据，也不会改动已读状态
+Admin = Annotated[bool, Depends(admin_flag)]
+
+
+async def require_admin(request: Request) -> None:
+    if not is_admin(request):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "需要管理员登录")

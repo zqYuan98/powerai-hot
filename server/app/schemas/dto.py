@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.enums import BizLine, Channel, FollowStatus, Stage
+from app.models.enums import BizLine, Channel, FollowStatus, KnowledgeDomain, KnowledgeType, Stage
 
 
 class Out(BaseModel):
@@ -176,6 +176,7 @@ class ChannelCount(Out):
 class Meta(Out):
     channels: list[ChannelCount]
     last_collect_at: datetime | None
+    sources_enabled: int
     llm_enabled: bool
     embedding_enabled: bool
     push_enabled: bool
@@ -276,6 +277,40 @@ class LoginIn(BaseModel):
     password: str
 
 
+class Viewer(Out):
+    admin: bool
+    auth_required: bool
+
+
+# ---------- 反馈 ----------
+
+class FeedbackIn(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    content: str = Field(min_length=2, max_length=2000)
+    contact: str | None = Field(default=None, max_length=200)
+    page_url: str | None = Field(default=None, max_length=500)
+
+
+class FeedbackAck(Out):
+    id: int
+
+
+class FeedbackOut(ORM):
+    id: int
+    content: str
+    contact: str | None
+    page_url: str | None
+    ip: str | None
+    user_agent: str | None
+    status: Literal["new", "done"]
+    created_at: datetime
+
+
+class FeedbackPatch(BaseModel):
+    status: Literal["new", "done"]
+
+
 class Ok(Out):
     ok: bool = True
     detail: str | None = None
@@ -345,3 +380,83 @@ class EvalRunDetail(EvalRunBrief):
     params: dict[str, Any]
     sweep: list[dict[str, Any]]
     errors: list[dict[str, Any]]
+
+
+# ---------- 知识库 ----------
+
+class KnowledgeCard(Out):
+    id: int
+    title: str
+    original_title: str
+    url: str
+    account: str | None
+    published_at: datetime | None
+    created_at: datetime
+    domain: KnowledgeDomain
+    ktype: KnowledgeType
+    tags: list[str]
+    summary: str | None
+    key_points: list[str]
+    scenarios: str | None
+    solution_use: str | None
+    standards: list[str]
+    score: float | None
+    featured: bool
+    status: Literal["new", "analyzed", "rejected", "duplicate", "hidden", "failed"]
+    status_reason: str | None = None  # 未通过/失败的原因，仅管理员
+
+
+class KnowledgeDims(Out):
+    depth: int | None
+    practical: int | None
+    accuracy: int | None
+    originality: int | None
+
+
+class KnowledgeDetail(KnowledgeCard):
+    dims: KnowledgeDims
+    related: list[KnowledgeCard]
+    # 以下仅管理员可见（访客为空）
+    content_text: str | None
+    note: str | None
+    duplicate_of: int | None
+
+
+class KnowledgePage(Out):
+    items: list[KnowledgeCard]
+    total: int
+
+
+class FacetCount(Out):
+    key: str
+    label: str
+    count: int
+
+
+class KnowledgeFacets(Out):
+    total: int
+    domains: list[FacetCount]
+    types: list[FacetCount]
+    status: dict[str, int]  # 各状态数量，仅管理员
+
+
+class KnowledgeSubmit(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    url: str = Field(min_length=8, max_length=1000)
+    title: str | None = Field(default=None, max_length=300)
+    content: str | None = Field(default=None, max_length=50000, description="抓不到正文时直接粘贴")
+    note: str | None = Field(default=None, max_length=2000)
+
+
+class KnowledgeSubmitAck(Out):
+    id: int
+    existed: bool
+    status: str
+
+
+class KnowledgePatch(BaseModel):
+    note: str | None = Field(default=None, max_length=2000)
+    hidden: bool | None = None
+    domain: KnowledgeDomain | None = None
+    ktype: KnowledgeType | None = None

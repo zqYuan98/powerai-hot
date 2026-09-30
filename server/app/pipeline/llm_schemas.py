@@ -8,7 +8,7 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from app.collectors.textutil import CN_TZ
-from app.models.enums import BizLine, Channel, Stage
+from app.models.enums import BizLine, Channel, KnowledgeDomain, KnowledgeType, Stage
 
 _CHANNELS = {c.value for c in Channel}
 _STAGES = {s.value for s in Stage}
@@ -198,3 +198,64 @@ class DailyOutput(BaseModel):
     lead_title: str = ""
     overview: str = ""
     sections: list[DailySection] = Field(default_factory=list)
+
+
+# ---------- 知识库 ----------
+
+class KnowledgeScores(BaseModel):
+    depth: int = 0
+    practical: int = 0
+    accuracy: int = 0
+    originality: int = 0
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def _range(cls, v: Any) -> int:
+        return _clamp(v, 10)
+
+
+class KnowledgeOutput(BaseModel):
+    relevant: bool = True
+    is_promo: bool = False
+    title_zh: str = ""
+    summary: str = ""
+    key_points: list[str] = Field(default_factory=list)
+    scenarios: str = ""
+    solution_use: str = ""
+    standards: list[str] = Field(default_factory=list)
+    domain: str = KnowledgeDomain.GENERAL.value
+    ktype: str = KnowledgeType.PRINCIPLE.value
+    tags: list[str] = Field(default_factory=list)
+    scores: KnowledgeScores = Field(default_factory=KnowledgeScores)
+
+    @field_validator("title_zh", "summary", "scenarios", "solution_use", mode="before")
+    @classmethod
+    def _text(cls, v: Any) -> str:
+        return str(v or "").strip()[:300]
+
+    @field_validator("key_points", mode="before")
+    @classmethod
+    def _points(cls, v: Any) -> list[str]:
+        return [str(p).strip()[:200] for p in (v or []) if str(p).strip()][:6]
+
+    @field_validator("standards", mode="before")
+    @classmethod
+    def _standards(cls, v: Any) -> list[str]:
+        return [str(p).strip()[:64] for p in (v or []) if str(p).strip()][:12]
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def _tags(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            v = v.replace("，", ",").split(",")
+        return [str(t).strip()[:32] for t in (v or []) if str(t).strip()][:4]
+
+    @field_validator("domain", mode="before")
+    @classmethod
+    def _domain(cls, v: Any) -> str:
+        return v if v in {d.value for d in KnowledgeDomain} else KnowledgeDomain.GENERAL.value
+
+    @field_validator("ktype", mode="before")
+    @classmethod
+    def _ktype(cls, v: Any) -> str:
+        return v if v in {t.value for t in KnowledgeType} else KnowledgeType.PRINCIPLE.value

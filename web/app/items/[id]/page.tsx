@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { DeadlineBadge, ItemCardView } from "@/components/feed/ItemCard";
 import { NoteEditor } from "@/components/feed/NoteEditor";
 import { StarButton } from "@/components/feed/StarButton";
+import { KnowledgeCardView } from "@/components/knowledge/KnowledgeCard";
 import { FollowControl } from "@/components/leads/FollowControl";
 import { Badge, Card } from "@/components/ui";
 import { api } from "@/lib/api.server";
@@ -19,7 +20,8 @@ import {
   STAGE_LABEL,
   TIER_LABEL,
 } from "@/lib/format";
-import type { ItemDetail, LeadOut } from "@/lib/types";
+import type { ItemDetail, KnowledgeCard, LeadOut } from "@/lib/types";
+import { isAdmin } from "@/lib/viewer";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -47,13 +49,13 @@ function Row({ label, value, dropped }: { label: string; value: ReactNode; dropp
   );
 }
 
-function LeadPanel({ itemId, lead }: { itemId: number; lead: LeadOut }) {
+function LeadPanel({ itemId, lead, admin }: { itemId: number; lead: LeadOut; admin: boolean }) {
   const dropped = new Set(lead.dropped_fields);
   return (
     <Card className="p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-ink">商机信息</h2>
-        <FollowControl itemId={itemId} status={lead.follow_status} />
+        {admin ? <FollowControl itemId={itemId} status={lead.follow_status} /> : null}
       </div>
       <dl className="divide-y divide-line">
         <Row label="项目" value={lead.project_name} dropped={dropped.has("project_name")} />
@@ -77,20 +79,27 @@ function LeadPanel({ itemId, lead }: { itemId: number; lead: LeadOut }) {
         {lead.qualification ? <Row label="资质要求" value={lead.qualification} /> : null}
         <Row label="业务线" value={`${BIZ_LABEL[lead.biz_line]} · 匹配度 ${lead.match_score}`} />
       </dl>
-      <div className="mt-3">
-        <NoteEditor
-          endpoint={`/leads/${itemId}`}
-          field="follow_note"
-          initial={lead.follow_note}
-          placeholder="跟进记录：联系人、沟通进展、下一步…"
-        />
-      </div>
+      {admin ? (
+        <div className="mt-3">
+          <NoteEditor
+            endpoint={`/leads/${itemId}`}
+            field="follow_note"
+            initial={lead.follow_note}
+            placeholder="跟进记录：联系人、沟通进展、下一步…"
+          />
+        </div>
+      ) : null}
     </Card>
   );
 }
 
 export default async function ItemPage({ params }: Props) {
-  const item = await api<ItemDetail>(`/items/${(await params).id}`);
+  const id = (await params).id;
+  const [item, admin, knowledge] = await Promise.all([
+    api<ItemDetail>(`/items/${id}`),
+    isAdmin(),
+    api<KnowledgeCard[]>("/knowledge/related", { item_id: id }),
+  ]);
   const title = item.title_zh || item.title;
 
   return (
@@ -167,7 +176,7 @@ export default async function ItemPage({ params }: Props) {
       </article>
 
       <aside className="space-y-4">
-        {item.lead ? <LeadPanel itemId={item.id} lead={item.lead} /> : null}
+        {item.lead ? <LeadPanel itemId={item.id} lead={item.lead} admin={admin} /> : null}
 
         {item.score !== null ? (
           <Card className="p-4">
@@ -193,10 +202,24 @@ export default async function ItemPage({ params }: Props) {
           </Card>
         ) : null}
 
-        <Card className="p-4">
-          <h2 className="mb-2 text-sm font-semibold text-ink">笔记</h2>
-          <NoteEditor endpoint={`/items/${item.id}`} field="note" initial={item.note} placeholder="记下你的判断…" />
-        </Card>
+        {knowledge.length ? (
+          <Card className="p-4">
+            <h2 className="text-sm font-semibold text-ink">相关知识</h2>
+            <p className="text-xs text-muted">知识库里与这条内容相关的工艺、规范与方案</p>
+            <div className="mt-1 divide-y divide-line">
+              {knowledge.map((k) => (
+                <KnowledgeCardView key={k.id} k={k} compact />
+              ))}
+            </div>
+          </Card>
+        ) : null}
+
+        {admin ? (
+          <Card className="p-4">
+            <h2 className="mb-2 text-sm font-semibold text-ink">笔记</h2>
+            <NoteEditor endpoint={`/items/${item.id}`} field="note" initial={item.note} placeholder="记下你的判断…" />
+          </Card>
+        ) : null}
 
         {item.story && item.related.length ? (
           <Card className="p-4">

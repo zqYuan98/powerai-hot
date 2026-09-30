@@ -1,4 +1,4 @@
-import type { BizLine, Channel, FollowStatus, Stage } from "./types";
+import type { BizLine, Channel, FollowStatus, KnowledgeDomain, KnowledgeType, Stage } from "./types";
 
 export const CHANNELS: { value: Channel; label: string }[] = [
   { value: "tender", label: "招标" },
@@ -41,6 +41,29 @@ export const BIZ_LABEL: Record<BizLine, string> = {
   inspection_ai: "运检AI",
   grid_epc: "输变电EPC",
   other: "其他",
+};
+
+export const DOMAIN_LABEL: Record<KnowledgeDomain, string> = {
+  transmission: "输电线路",
+  substation: "变电站",
+  distribution: "配电网",
+  civil: "土建与基础",
+  commissioning: "调试试验",
+  inspection: "智能运检",
+  renewable: "新能源与储能",
+  general: "综合",
+};
+
+export const KTYPE_LABEL: Record<KnowledgeType, string> = {
+  principle: "原理科普",
+  construction: "施工工艺",
+  standard: "标准规范",
+  design: "设计方案",
+  safety: "安全与事故",
+  cost: "造价定额",
+  bidding: "招投标实务",
+  management: "项目管理",
+  tech: "新技术装备",
 };
 
 export const FOLLOW_LABEL: Record<FollowStatus, string> = {
