@@ -44,7 +44,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         </a>
         <ViewerProvider admin={admin}>
           <TopNav />
-          <main id="main" className="mx-auto max-w-6xl px-4 pt-5 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-12">
+          <main id="main" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-14">
             {children}
             <SiteFooter />
           </main>
